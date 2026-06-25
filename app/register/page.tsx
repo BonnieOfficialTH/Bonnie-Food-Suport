@@ -150,7 +150,7 @@ export default function RegisterPage() {
   }
 
   const inp = "w-full px-4 py-3 rounded-xl border text-sm bg-white"
-  const inpStyle = { borderColor: '#f3c6d0', color: 'var(--bonnie-dark)' }
+  const inpStyle = { borderColor: '#E9D5FF', color: 'var(--bonnie-dark)' }
 
   if (success) {
     return (
@@ -175,7 +175,7 @@ export default function RegisterPage() {
         </div>
         <div className="flex gap-3 justify-center flex-wrap">
           <Link href="/queue" className="px-5 py-2.5 rounded-full text-white text-sm"
-            style={{ background: 'linear-gradient(135deg, var(--bonnie-pink), var(--bonnie-rose))' }}>{t.viewQueue}</Link>
+            style={{ background: 'linear-gradient(135deg, var(--bonnie-lavender), var(--bonnie-rose))' }}>{t.viewQueue}</Link>
           <button onClick={() => { setSuccess(null); setName(''); setAccount(''); setRegType(''); setFoodCats([]); setQuantities({ savory: '', dessert: '', drink: '', fruit: '' }); setConvenience(''); setAcceptedTerms(false) }}
             className="px-5 py-2.5 rounded-full text-sm border"
             style={{ borderColor: 'var(--bonnie-pink)', color: 'var(--bonnie-rose)', backgroundColor: 'white' }}>{t.registerAnother}</button>
@@ -187,7 +187,7 @@ export default function RegisterPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-5" style={{ fontFamily: 'Georgia, serif', color: 'var(--bonnie-dark)' }}>{t.title}</h1>
-      <div className="bg-white rounded-3xl p-5 md:p-7 border space-y-5" style={{ borderColor: '#f9dde5' }}>
+      <div className="bg-white rounded-3xl p-5 md:p-7 border space-y-5" style={{ borderColor: '#F3E8FF' }}>
 
         {/* Notices */}
         <div className="space-y-3">
@@ -225,7 +225,7 @@ export default function RegisterPage() {
               <button key={type} onClick={() => { setRegType(type); setFoodCats([]) }}
                 className="py-3 rounded-xl text-sm font-medium border-2 transition-all"
                 style={regType === type
-                  ? { background: 'linear-gradient(135deg, var(--bonnie-pink), var(--bonnie-rose))', color: 'white', borderColor: 'var(--bonnie-rose)' }
+                  ? { background: 'linear-gradient(135deg, var(--bonnie-lavender), var(--bonnie-rose))', color: 'white', borderColor: 'var(--bonnie-rose)' }
                   : { backgroundColor: '#f9f9f9', color: 'var(--bonnie-muted)', borderColor: 'transparent' }}>
                 {type === 'food_support' ? t.foodSupport : t.foodTruck}
               </button>
@@ -247,7 +247,7 @@ export default function RegisterPage() {
                     <button key={cat} onClick={() => toggleCat(cat)}
                       className="py-2.5 rounded-xl text-xs font-medium border-2 flex items-center justify-center gap-1.5 transition-all"
                       style={selected
-                        ? { background: 'linear-gradient(135deg, var(--bonnie-pink), var(--bonnie-rose))', color: 'white', borderColor: 'var(--bonnie-rose)' }
+                        ? { background: 'linear-gradient(135deg, var(--bonnie-lavender), var(--bonnie-rose))', color: 'white', borderColor: 'var(--bonnie-rose)' }
                         : { backgroundColor: 'white', color: 'var(--bonnie-muted)', borderColor: 'transparent' }}>
                       {selected && <span>✓</span>} {icons[cat]} {labels[cat]}
                     </button>
@@ -279,7 +279,7 @@ export default function RegisterPage() {
         {/* Terms */}
         <div className="space-y-3">
           <div className="text-xs font-semibold" style={{ color: 'var(--bonnie-dark)' }}>{t.termsTitle}</div>
-          <div className="p-4 rounded-2xl border" style={{ borderColor: '#f3c6d0', backgroundColor: 'var(--bonnie-cream)' }}>
+          <div className="p-4 rounded-2xl border" style={{ borderColor: '#E9D5FF', backgroundColor: 'var(--bonnie-cream)' }}>
             <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--bonnie-dark)' }}>{t.cond1}</p>
             <div className="flex gap-2">
               <button onClick={() => setConvenience('convenient')}
@@ -305,7 +305,7 @@ export default function RegisterPage() {
 
         <button onClick={handleSubmit} disabled={loading}
           className="w-full py-3.5 rounded-2xl text-white font-medium text-sm transition-opacity hover:opacity-90 disabled:opacity-60"
-          style={{ background: 'linear-gradient(135deg, var(--bonnie-pink), var(--bonnie-rose))' }}>
+          style={{ background: 'linear-gradient(135deg, var(--bonnie-lavender), var(--bonnie-rose))' }}>
           {loading ? t.submitting : t.submit}
         </button>
       </div>

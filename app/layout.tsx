@@ -18,7 +18,7 @@ function Header() {
   ]
 
   return (
-    <header style={{ backgroundColor: 'white', borderBottom: '1.5px solid #f3c6d0', position: 'sticky', top: 0, zIndex: 50 }}>
+    <header style={{ backgroundColor: 'white', borderBottom: '1.5px solid #E9D5FF', position: 'sticky', top: 0, zIndex: 50 }}>
       <div className="max-w-2xl mx-auto px-4">
         {/* Top row */}
         <div className="flex items-center justify-between py-3 gap-2">
@@ -44,7 +44,7 @@ function Header() {
             </div>
 
             {/* Lang toggle */}
-            <div className="flex rounded-full overflow-hidden border flex-shrink-0" style={{ borderColor: '#f3c6d0' }}>
+            <div className="flex rounded-full overflow-hidden border flex-shrink-0" style={{ borderColor: '#E9D5FF' }}>
               {(['th', 'en'] as const).map(l => (
                 <button key={l} onClick={() => setLang(l)}
                   className="px-3 py-1 text-xs font-semibold transition-colors"
@@ -75,7 +75,7 @@ function Header() {
         </div>
 
         {/* Tab row */}
-        <div className="flex border-t" style={{ borderColor: '#f9dde5' }}>
+        <div className="flex border-t" style={{ borderColor: '#F3E8FF' }}>
           {tabs.map(tab => {
             const active = pathname === tab.href
             return (
@@ -116,7 +116,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <footer className="py-8 text-xs" style={{ color: 'var(--bonnie-muted)' }}>
             <div className="max-w-2xl mx-auto px-4 flex items-center justify-between">
               <span>© Bonnie Official TH - Food Booster</span>
-              <a href="/admin/login" style={{ color: '#d8b4be', textDecoration: 'none', fontSize: '10px' }}>Admin</a>
+              <a href="/admin/login" style={{ color: '#C4B5F4', textDecoration: 'none', fontSize: '10px' }}>Admin</a>
             </div>
           </footer>
         </LangProvider>

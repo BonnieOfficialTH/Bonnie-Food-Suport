@@ -83,7 +83,7 @@ function EditableSection({ title, emoji, settingKey, placeholder, rows = 4, onAc
   }
 
   return (
-    <div className="bg-white rounded-2xl p-4 border mb-4" style={{ borderColor: '#f9dde5' }}>
+    <div className="bg-white rounded-2xl p-4 border mb-4" style={{ borderColor: '#F3E8FF' }}>
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm font-semibold" style={{ color: 'var(--bonnie-dark)' }}>{emoji} {title}</div>
         {!editing ? (
@@ -97,7 +97,7 @@ function EditableSection({ title, emoji, settingKey, placeholder, rows = 4, onAc
             <button onClick={() => setEditing(false)} className="text-xs px-3 py-1 rounded-full border"
               style={{ borderColor: '#e5e7eb', color: 'var(--bonnie-muted)', backgroundColor: 'white' }}>ยกเลิก</button>
             <button onClick={handleSave} disabled={saving} className="text-xs px-3 py-1 rounded-full text-white font-medium disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg, var(--bonnie-pink), var(--bonnie-rose))' }}>
+              style={{ background: 'linear-gradient(135deg, var(--bonnie-lavender), var(--bonnie-rose))' }}>
               {saving ? 'กำลังบันทึก...' : '💾 บันทึก'}
             </button>
           </div>
@@ -221,7 +221,7 @@ export default function AdminDashboard() {
           <a href="/" className="text-xs px-4 py-2 rounded-full border font-medium"
             style={{ borderColor: 'var(--bonnie-pink)', color: 'var(--bonnie-rose)', backgroundColor: 'white' }}>🏠 หน้าหลัก</a>
           <button onClick={handleLogout} className="text-xs px-4 py-2 rounded-full border"
-            style={{ borderColor: '#f3c6d0', color: 'var(--bonnie-muted)', backgroundColor: 'white' }}>ออกจากระบบ</button>
+            style={{ borderColor: '#E9D5FF', color: 'var(--bonnie-muted)', backgroundColor: 'white' }}>ออกจากระบบ</button>
         </div>
       </div>
 
@@ -233,7 +233,7 @@ export default function AdminDashboard() {
           { label: 'ระหว่างติดต่อ', count: data.filter(r => r.status === 'contacting').length, color: '#2563eb' },
           { label: 'ยกเลิก', count: data.filter(r => r.status === 'cancelled').length, color: '#dc2626' },
         ].map(s => (
-          <div key={s.label} className="bg-white rounded-2xl p-3 border text-center" style={{ borderColor: '#f9dde5' }}>
+          <div key={s.label} className="bg-white rounded-2xl p-3 border text-center" style={{ borderColor: '#F3E8FF' }}>
             <div className="text-2xl font-bold" style={{ color: s.color, fontFamily: 'Georgia, serif' }}>{s.count}</div>
             <div className="text-xs mt-0.5" style={{ color: 'var(--bonnie-muted)' }}>{s.label}</div>
           </div>
@@ -241,7 +241,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Admin Tabs */}
-      <div className="flex gap-2 mb-6 border-b" style={{ borderColor: '#f9dde5' }}>
+      <div className="flex gap-2 mb-6 border-b" style={{ borderColor: '#F3E8FF' }}>
         {ADMIN_TABS.map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             className="px-4 py-2.5 text-xs font-semibold transition-colors relative flex-shrink-0"
@@ -292,9 +292,9 @@ export default function AdminDashboard() {
             {loading ? (
               <div className="text-center py-12 text-sm" style={{ color: 'var(--bonnie-muted)' }}>กำลังโหลด...</div>
             ) : categoryData.length === 0 ? (
-              <div className="text-center py-10 bg-white rounded-2xl border text-sm" style={{ borderColor: '#f9dde5', color: 'var(--bonnie-muted)' }}>ยังไม่มีการลงทะเบียน</div>
+              <div className="text-center py-10 bg-white rounded-2xl border text-sm" style={{ borderColor: '#F3E8FF', color: 'var(--bonnie-muted)' }}>ยังไม่มีการลงทะเบียน</div>
             ) : categoryData.map(reg => (
-              <div key={reg.id} className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: '#f9dde5' }}>
+              <div key={reg.id} className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: '#F3E8FF' }}>
                 <div className="px-4 py-3.5 flex items-center gap-3 cursor-pointer" onClick={() => setExpandedId(expandedId === reg.id ? null : reg.id)}>
                   <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs"
                     style={{ backgroundColor: 'var(--bonnie-warm)', color: 'var(--bonnie-rose)' }}>
@@ -316,7 +316,7 @@ export default function AdminDashboard() {
                   <span className="text-xs flex-shrink-0" style={{ color: 'var(--bonnie-muted)' }}>{expandedId === reg.id ? '▲' : '▼'}</span>
                 </div>
                 {expandedId === reg.id && (
-                  <div className="px-4 pb-4 border-t" style={{ borderColor: '#f9dde5' }}>
+                  <div className="px-4 pb-4 border-t" style={{ borderColor: '#F3E8FF' }}>
                     <div className="grid grid-cols-2 gap-2 my-3 text-xs">
                       {[
                         { label: 'ชื่อ', value: reg.name },

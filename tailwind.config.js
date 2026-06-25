@@ -9,12 +9,14 @@ module.exports = {
     extend: {
       colors: {
         bonnie: {
-          pink: '#F4A7B9',
-          rose: '#E8748A',
-          cream: '#FDF6F0',
-          warm: '#FAE8E0',
-          dark: '#2D1B1E',
-          muted: '#7A5560',
+          pink: '#FBCFE8',
+          rose: '#A855F7',
+          cream: '#FAF5FF',
+          warm: '#F3E8FF',
+          dark: '#09090B',
+          muted: '#6B21A8',
+          blue: '#BAE6FD',
+          lavender: '#D8B4FE',
         }
       },
       fontFamily: {

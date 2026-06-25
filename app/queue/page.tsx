@@ -137,12 +137,12 @@ export default function QueuePage() {
             {lang === 'th' ? 'กำลังโหลด...' : 'Loading...'}
           </div>
         ) : categoryData.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-2xl border text-sm" style={{ borderColor: '#f9dde5', color: 'var(--bonnie-muted)' }}>
+          <div className="text-center py-12 bg-white rounded-2xl border text-sm" style={{ borderColor: '#F3E8FF', color: 'var(--bonnie-muted)' }}>
             <div className="text-3xl mb-2">{CATEGORIES.find(c=>c.key===activeTab)?.icon}</div>
             {lang === 'th' ? 'ยังไม่มีการลงทะเบียนในหมวดนี้' : 'No registrations in this category yet'}
           </div>
         ) : categoryData.map(reg => (
-          <div key={reg.id} className="bg-white rounded-2xl px-4 py-3.5 border flex items-center gap-3" style={{ borderColor: '#f9dde5' }}>
+          <div key={reg.id} className="bg-white rounded-2xl px-4 py-3.5 border flex items-center gap-3" style={{ borderColor: '#F3E8FF' }}>
             <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs"
               style={{ backgroundColor: 'var(--bonnie-warm)', color: 'var(--bonnie-rose)' }}>
               {getDisplayNumber(reg, categoryData) !== null ? `#${getDisplayNumber(reg, categoryData)}` : '—'}

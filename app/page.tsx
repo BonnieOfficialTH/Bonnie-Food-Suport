@@ -26,14 +26,14 @@ export default function HomePage() {
       </div>
 
       <div className="flex items-center gap-3 mb-5">
-        <div className="h-px flex-1" style={{ backgroundColor: '#f3c6d0' }} />
+        <div className="h-px flex-1" style={{ backgroundColor: '#E9D5FF' }} />
         <h2 className="text-sm font-bold text-center" style={{ color: 'var(--bonnie-dark)', fontFamily: 'Georgia, serif' }}>
           {lang === 'th' ? 'รายละเอียดเงื่อนไขและข้อตกลงสำหรับการลงทะเบียน Food Support ของบอนนี่' : 'Food Support Registration Terms, Conditions, and Details'}
         </h2>
-        <div className="h-px flex-1" style={{ backgroundColor: '#f3c6d0' }} />
+        <div className="h-px flex-1" style={{ backgroundColor: '#E9D5FF' }} />
       </div>
 
-      <div className="bg-white rounded-2xl p-5 border" style={{ borderColor: '#f9dde5' }}>
+      <div className="bg-white rounded-2xl p-5 border" style={{ borderColor: '#F3E8FF' }}>
         {rules ? (
           <div className="text-sm leading-relaxed rich-content"
             dangerouslySetInnerHTML={{ __html: rules }} />

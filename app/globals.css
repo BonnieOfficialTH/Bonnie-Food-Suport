@@ -3,12 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --bonnie-pink: #F4A7B9;
-  --bonnie-rose: #E8748A;
-  --bonnie-cream: #FDF6F0;
-  --bonnie-warm: #FAE8E0;
-  --bonnie-dark: #2D1B1E;
-  --bonnie-muted: #7A5560;
+  --bonnie-pink: #FBCFE8;
+  --bonnie-rose: #A855F7;
+  --bonnie-cream: #FAF5FF;
+  --bonnie-warm: #F3E8FF;
+  --bonnie-dark: #09090B;
+  --bonnie-muted: #6B21A8;
+  --bonnie-blue: #BAE6FD;
+  --bonnie-lavender: #D8B4FE;
 }
 
 * { box-sizing: border-box; }
@@ -25,11 +27,11 @@ input, select, textarea {
 }
 input:focus, select:focus, textarea:focus {
   border-color: var(--bonnie-rose) !important;
-  box-shadow: 0 0 0 3px rgba(232,116,138,0.12);
+  box-shadow: 0 0 0 3px rgba(168,85,247,0.15);
 }
 
 .tab-active {
-  background: linear-gradient(135deg, var(--bonnie-pink), var(--bonnie-rose));
+  background: linear-gradient(135deg, var(--bonnie-lavender), var(--bonnie-rose));
   color: white;
 }
 .tab-inactive {
