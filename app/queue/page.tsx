@@ -153,11 +153,10 @@ export default function QueuePage() {
               <div className="font-semibold text-sm truncate" style={{ color: statusColor(reg.status) }}>
                 {censor(reg.account)}
               </div>
-              {reg.food_quantity && (
-                <div className="text-xs truncate mt-0.5" style={{ color: 'var(--bonnie-muted)' }}>
-                  {reg.food_quantity}
-                </div>
-              )}
+              <div className="text-xs mt-0.5 flex flex-wrap gap-x-2" style={{ color: 'var(--bonnie-muted)' }}>
+                {reg.food_quantity && <span>{reg.food_quantity}</span>}
+                <span>{new Date(reg.status === 'pending' ? reg.created_at : reg.updated_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}</span>
+              </div>
             </div>
             <span className="flex-shrink-0 text-xs px-2.5 py-1 rounded-full font-medium"
               style={{ backgroundColor: statusBg(reg.status), color: statusColor(reg.status) }}>

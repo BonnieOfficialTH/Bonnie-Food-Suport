@@ -247,7 +247,14 @@ export default function AdminDashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm" style={{ color: statusFg(reg.status) }}>{reg.name}</div>
-                    <div className="text-xs truncate" style={{ color: 'var(--bonnie-muted)' }}>{reg.account}{reg.food_quantity ? ` · ${reg.food_quantity}` : ''}</div>
+                    <div className="text-xs truncate" style={{ color: 'var(--bonnie-muted)' }}>
+                      {reg.account}{reg.food_quantity ? ` · ${reg.food_quantity}` : ''}
+                    </div>
+                    <div className="text-xs mt-0.5" style={{ color: '#b0919a' }}>
+                      {reg.status === 'pending'
+                        ? `ลงทะเบียน ${new Date(reg.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}`
+                        : `อัปเดต ${new Date(reg.updated_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}`}
+                    </div>
                   </div>
                   <span className="text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0"
                     style={{ backgroundColor: statusBg(reg.status), color: statusFg(reg.status) }}>
