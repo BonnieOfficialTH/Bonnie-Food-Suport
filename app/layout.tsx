@@ -122,7 +122,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <footer className="py-8 text-xs" style={{ color: 'var(--bonnie-muted)' }}>
             <div className="max-w-2xl mx-auto px-4 flex items-center justify-between">
               <span>© Bonnie Official TH - Food Booster</span>
-              <a href="/admin/login" style={{ color: '#d8b4be', textDecoration: 'none', fontSize: '10px' }}>admin</a>
+              <a href="/admin/login" style={{ color: '#d8b4be', textDecoration: 'none', fontSize: '10px' }}>Admin</a>
             </div>
           </footer>
         </LangProvider>
