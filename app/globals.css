@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bonnie-pink: #F4A7B9;
+  --bonnie-rose: #E8748A;
+  --bonnie-cream: #FDF6F0;
+  --bonnie-warm: #FAE8E0;
+  --bonnie-dark: #2D1B1E;
+  --bonnie-muted: #7A5560;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: var(--bonnie-cream);
+  color: var(--bonnie-dark);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+input, select, textarea {
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--bonnie-rose) !important;
+  box-shadow: 0 0 0 3px rgba(232,116,138,0.12);
+}
+
+.tab-active {
+  background: linear-gradient(135deg, var(--bonnie-pink), var(--bonnie-rose));
+  color: white;
+}
+.tab-inactive {
+  background: white;
+  color: var(--bonnie-muted);
+  border: 1.5px solid #f3c6d0;
+}
+
+.status-sent    { color: #16a34a; }
+.status-contacting { color: #2563eb; }
+.status-cancelled  { color: #dc2626; }
+.status-pending, .status-unavailable { color: var(--bonnie-dark); }
+
+@media (max-width: 640px) {
+  .hide-mobile { display: none !important; }
+}
