@@ -25,13 +25,22 @@ const STATUSES: { value: RegistrationStatus; label: string; color: string }[] = 
 ]
 
 function sortQueue(items: QueueItem[]): QueueItem[] {
-  const order = { contacting: 0, pending: 1, unavailable: 2, sent: 3, cancelled: 4 }
-  return [...items].sort((a, b) => {
-    const oa = order[a.status as keyof typeof order] ?? 9
-    const ob = order[b.status as keyof typeof order] ?? 9
-    if (oa !== ob) return oa - ob
-    return a.category_queue_number - b.category_queue_number
-  })
+  // Split into groups
+  const contacting = items.filter(i => i.status === 'contacting').sort((a,b) => a.category_queue_number - b.category_queue_number)
+  const unavailable = items.filter(i => i.status === 'unavailable').sort((a,b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime())
+  const sent = items.filter(i => i.status === 'sent').sort((a,b) => a.category_queue_number - b.category_queue_number)
+  const cancelled = items.filter(i => i.status === 'cancelled').sort((a,b) => a.category_queue_number - b.category_queue_number)
+
+  // For pending: split into "before unavailable" and "after unavailable"
+  // based on whether they registered before or after any unavailable was marked
+  const lastUnavailableTime = unavailable.length > 0
+    ? Math.max(...unavailable.map(i => new Date(i.updated_at).getTime()))
+    : 0
+
+  const pendingBefore = items.filter(i => i.status === 'pending' && new Date(i.created_at).getTime() <= lastUnavailableTime).sort((a,b) => a.category_queue_number - b.category_queue_number)
+  const pendingAfter = items.filter(i => i.status === 'pending' && new Date(i.created_at).getTime() > lastUnavailableTime).sort((a,b) => a.category_queue_number - b.category_queue_number)
+
+  return [...contacting, ...pendingBefore, ...unavailable, ...pendingAfter, ...sent, ...cancelled]
 }
 
 function getDisplayNumber(item: QueueItem, sortedList: QueueItem[]): number | null {
@@ -208,7 +217,7 @@ export default function AdminDashboard() {
           {/* Category tabs */}
           <div className="flex gap-2 overflow-x-auto pb-2 mb-4" style={{ scrollbarWidth: 'none' }}>
             {CATEGORIES.map(({ key, icon }) => {
-              const pending = data.filter(r => r.food_category === key && r.status === 'pending').length
+              const pending = data.filter(r => r.food_category === key && ['pending','contacting','unavailable'].includes(r.status)).length
               return (
                 <button key={key} onClick={() => setActiveCat(key)}
                   className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${activeCat === key ? 'tab-active' : 'tab-inactive'}`}>

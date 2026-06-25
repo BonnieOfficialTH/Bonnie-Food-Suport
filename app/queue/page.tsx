@@ -24,16 +24,24 @@ function censor(str: string): string {
 }
 
 function sortQueue(items: QueueItem[]): QueueItem[] {
-  const order = { contacting: 0, pending: 1, unavailable: 2, sent: 3, cancelled: 4 }
-  return [...items].sort((a, b) => {
-    const oa = order[a.status as keyof typeof order] ?? 9
-    const ob = order[b.status as keyof typeof order] ?? 9
-    if (oa !== ob) return oa - ob
-    return a.category_queue_number - b.category_queue_number
-  })
+  // Split into groups
+  const contacting = items.filter(i => i.status === 'contacting').sort((a,b) => a.category_queue_number - b.category_queue_number)
+  const unavailable = items.filter(i => i.status === 'unavailable').sort((a,b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime())
+  const sent = items.filter(i => i.status === 'sent').sort((a,b) => a.category_queue_number - b.category_queue_number)
+  const cancelled = items.filter(i => i.status === 'cancelled').sort((a,b) => a.category_queue_number - b.category_queue_number)
+
+  // For pending: split into "before unavailable" and "after unavailable"
+  // based on whether they registered before or after any unavailable was marked
+  const lastUnavailableTime = unavailable.length > 0
+    ? Math.max(...unavailable.map(i => new Date(i.updated_at).getTime()))
+    : 0
+
+  const pendingBefore = items.filter(i => i.status === 'pending' && new Date(i.created_at).getTime() <= lastUnavailableTime).sort((a,b) => a.category_queue_number - b.category_queue_number)
+  const pendingAfter = items.filter(i => i.status === 'pending' && new Date(i.created_at).getTime() > lastUnavailableTime).sort((a,b) => a.category_queue_number - b.category_queue_number)
+
+  return [...contacting, ...pendingBefore, ...unavailable, ...pendingAfter, ...sent, ...cancelled]
 }
 
-// Get display position number (1-based, grouped by active statuses only)
 function getDisplayNumber(item: QueueItem, sortedList: QueueItem[]): number | null {
   const activeStatuses = ['contacting', 'pending', 'unavailable']
   if (!activeStatuses.includes(item.status)) return null
@@ -79,7 +87,7 @@ export default function QueuePage() {
   }
 
   const categoryData = sortQueue(data.filter(r => r.food_category === activeTab))
-  const pendingCount = (cat: FoodCategory) => data.filter(r => r.food_category === cat && r.status === 'pending').length
+  const pendingCount = (cat: FoodCategory) => data.filter(r => r.food_category === cat && ['pending','contacting','unavailable'].includes(r.status)).length
 
   return (
     <div>
