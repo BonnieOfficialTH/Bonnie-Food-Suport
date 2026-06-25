@@ -16,10 +16,6 @@ export default function HomePage() {
   return (
     <div>
       <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm mb-4"
-          style={{ backgroundColor: 'var(--bonnie-warm)', color: 'var(--bonnie-rose)' }}>
-          🌸 {lang === 'th' ? 'ยินดีต้อนรับสู่บ้านบอนนี่' : "Welcome to Bonnie's House"}
-        </div>
         <h1 className="text-3xl md:text-4xl font-bold mb-3"
           style={{ fontFamily: 'Georgia, serif', color: 'var(--bonnie-dark)' }}>
           Food Support
@@ -39,9 +35,8 @@ export default function HomePage() {
 
       <div className="bg-white rounded-2xl p-5 border" style={{ borderColor: '#f9dde5' }}>
         {rules ? (
-          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--bonnie-dark)' }}>
-            {rules}
-          </p>
+          <div className="text-sm leading-relaxed rich-content"
+            dangerouslySetInnerHTML={{ __html: rules }} />
         ) : (
           <p className="text-sm text-center py-6" style={{ color: 'var(--bonnie-muted)' }}>
             {lang === 'th' ? 'ยังไม่มีกติกา' : 'No rules posted yet.'}

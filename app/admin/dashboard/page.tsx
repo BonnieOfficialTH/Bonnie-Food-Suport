@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Registration, FoodCategory, FOOD_CATEGORY_LABELS, STATUS_LABELS, RegistrationStatus } from '@/lib/types'
 import { useRouter } from 'next/navigation'
+import RichEditor from '@/components/RichEditor'
 
 const CATEGORIES: { key: FoodCategory; icon: string }[] = [
   { key: 'savory', icon: '🍱' },
@@ -130,13 +131,11 @@ export default function AdminDashboard() {
         <div className="text-xs font-semibold mb-2" style={{ color: 'var(--bonnie-dark)' }}>
           ⚠️ ประกาศอาหารที่ขอให้หลีกเลี่ยง (แสดงในหน้าลงทะเบียน)
         </div>
-        <textarea
+        <RichEditor
           value={allergyNotice}
-          onChange={e => setAllergyNotice(e.target.value)}
-          rows={3}
+          onChange={setAllergyNotice}
           placeholder="เช่น หมู, อาหารทะเล, ถั่ว..."
-          className="w-full px-3 py-2.5 rounded-xl border text-sm bg-white resize-none"
-          style={{ borderColor: '#f3c6d0', color: 'var(--bonnie-dark)' }}
+          rows={3}
         />
         <button onClick={saveNotice} disabled={savingNotice}
           className="mt-2 px-4 py-2 rounded-xl text-white text-xs font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
@@ -150,13 +149,11 @@ export default function AdminDashboard() {
         <div className="text-xs font-semibold mb-2" style={{ color: 'var(--bonnie-dark)' }}>
           📋 กติกาของบ้าน (แสดงในหน้าแรก)
         </div>
-        <textarea
+        <RichEditor
           value={houseRules}
-          onChange={e => setHouseRules(e.target.value)}
-          rows={6}
+          onChange={setHouseRules}
           placeholder="พิมพ์กติกาของบ้านที่นี่..."
-          className="w-full px-3 py-2.5 rounded-xl border text-sm bg-white resize-none"
-          style={{ borderColor: '#f3c6d0', color: 'var(--bonnie-dark)' }}
+          rows={6}
         />
         <button onClick={saveRules} disabled={savingRules}
           className="mt-2 px-4 py-2 rounded-xl text-white text-xs font-medium transition-opacity hover:opacity-90 disabled:opacity-60"

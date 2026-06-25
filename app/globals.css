@@ -46,3 +46,7 @@ input:focus, select:focus, textarea:focus {
 @media (max-width: 640px) {
   .hide-mobile { display: none !important; }
 }
+
+.rich-content b, .rich-content strong { font-weight: 700; }
+.rich-content i, .rich-content em { font-style: italic; }
+.rich-content u { text-decoration: underline; }
