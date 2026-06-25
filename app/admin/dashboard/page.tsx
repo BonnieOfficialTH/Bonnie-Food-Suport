@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { QueueItem, FoodCategory, FOOD_CATEGORY_LABELS, STATUS_LABELS, RegistrationStatus } from '@/lib/types'
 import { useRouter } from 'next/navigation'
 import RichEditor from '@/components/RichEditor'
 
-type AdminTab = 'rules' | 'notes' | 'queue'
+type AdminTab = 'queue' | 'rules' | 'notes'
 
 const CATEGORIES: { key: FoodCategory; icon: string }[] = [
   { key: 'savory', icon: '🍱' },
@@ -24,23 +24,28 @@ const STATUSES: { value: RegistrationStatus; label: string; color: string }[] = 
   { value: 'cancelled', label: 'ยกเลิกคิว', color: '#dc2626' },
 ]
 
+const TIMEOUT_MS = 10 * 60 * 1000 // 10 minutes
+
 function sortQueue(items: QueueItem[]): QueueItem[] {
-  // Split into groups
-  const contacting = items.filter(i => i.status === 'contacting').sort((a,b) => a.category_queue_number - b.category_queue_number)
-  const unavailable = items.filter(i => i.status === 'unavailable').sort((a,b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime())
-  const sent = items.filter(i => i.status === 'sent').sort((a,b) => a.category_queue_number - b.category_queue_number)
-  const cancelled = items.filter(i => i.status === 'cancelled').sort((a,b) => a.category_queue_number - b.category_queue_number)
-
-  // For pending: split into "before unavailable" and "after unavailable"
-  // based on whether they registered before or after any unavailable was marked
-  const lastUnavailableTime = unavailable.length > 0
-    ? Math.max(...unavailable.map(i => new Date(i.updated_at).getTime()))
-    : 0
-
-  const pendingBefore = items.filter(i => i.status === 'pending' && new Date(i.created_at).getTime() <= lastUnavailableTime).sort((a,b) => a.category_queue_number - b.category_queue_number)
-  const pendingAfter = items.filter(i => i.status === 'pending' && new Date(i.created_at).getTime() > lastUnavailableTime).sort((a,b) => a.category_queue_number - b.category_queue_number)
-
-  return [...contacting, ...pendingBefore, ...unavailable, ...pendingAfter, ...sent, ...cancelled]
+  const statusOrder = { contacting: 0, pending: 1, unavailable: 2, sent: 3, cancelled: 4 }
+  const lastUnavailableTime = Math.max(
+    0,
+    ...items.filter(i => i.status === 'unavailable').map(i => new Date(i.updated_at).getTime())
+  )
+  return [...items].sort((a, b) => {
+    const oa = statusOrder[a.status as keyof typeof statusOrder] ?? 9
+    const ob = statusOrder[b.status as keyof typeof statusOrder] ?? 9
+    if (oa !== ob) return oa - ob
+    if (a.status === 'unavailable' && b.status === 'unavailable') {
+      return new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime()
+    }
+    if (a.status === 'pending' && b.status === 'pending') {
+      const aAfter = new Date(a.created_at).getTime() > lastUnavailableTime
+      const bAfter = new Date(b.created_at).getTime() > lastUnavailableTime
+      if (aAfter !== bAfter) return aAfter ? 1 : -1
+    }
+    return a.category_queue_number - b.category_queue_number
+  })
 }
 
 function getDisplayNumber(item: QueueItem, sortedList: QueueItem[]): number | null {
@@ -49,6 +54,7 @@ function getDisplayNumber(item: QueueItem, sortedList: QueueItem[]): number | nu
   const activeOnly = sortedList.filter(i => activeStatuses.includes(i.status))
   return activeOnly.findIndex(i => i.id === item.id) + 1
 }
+
 function statusFg(s: RegistrationStatus) {
   switch(s) { case 'sent': return '#16a34a'; case 'contacting': return '#2563eb'; case 'cancelled': return '#dc2626'; case 'unavailable': return '#92400e'; default: return 'var(--bonnie-dark)' }
 }
@@ -56,8 +62,8 @@ function statusBg(s: RegistrationStatus) {
   switch(s) { case 'sent': return '#dcfce7'; case 'contacting': return '#dbeafe'; case 'cancelled': return '#fee2e2'; case 'unavailable': return '#fef3c7'; default: return 'var(--bonnie-warm)' }
 }
 
-function EditableSection({ title, emoji, settingKey, placeholder, rows = 4 }: {
-  title: string; emoji: string; settingKey: string; placeholder: string; rows?: number
+function EditableSection({ title, emoji, settingKey, placeholder, rows = 4, onAction }: {
+  title: string; emoji: string; settingKey: string; placeholder: string; rows?: number; onAction?: () => void
 }) {
   const [value, setValue] = useState('')
   const [editing, setEditing] = useState(false)
@@ -73,6 +79,7 @@ function EditableSection({ title, emoji, settingKey, placeholder, rows = 4 }: {
     setSaving(true)
     await supabase.from('settings').upsert({ key: settingKey, value: draft }, { onConflict: 'key' })
     setValue(draft); setEditing(false); setSaving(false)
+    onAction?.()
   }
 
   return (
@@ -114,15 +121,57 @@ export default function AdminDashboard() {
   const [activeCat, setActiveCat] = useState<FoodCategory>('savory')
   const [updating, setUpdating] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [timeoutWarning, setTimeoutWarning] = useState(false)
+  const [remainingSeconds, setRemainingSeconds] = useState(0)
   const router = useRouter()
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const warningRef = useRef<NodeJS.Timeout | null>(null)
+  const countdownRef = useRef<NodeJS.Timeout | null>(null)
+
+  const handleLogout = useCallback(async () => {
+    await supabase.auth.signOut()
+    router.push('/admin/login')
+  }, [router])
+
+  const resetTimer = useCallback(() => {
+    setTimeoutWarning(false)
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    if (warningRef.current) clearTimeout(warningRef.current)
+    if (countdownRef.current) clearInterval(countdownRef.current)
+
+    // Warn 1 minute before logout
+    warningRef.current = setTimeout(() => {
+      setTimeoutWarning(true)
+      setRemainingSeconds(60)
+      countdownRef.current = setInterval(() => {
+        setRemainingSeconds(s => {
+          if (s <= 1) { clearInterval(countdownRef.current!); return 0 }
+          return s - 1
+        })
+      }, 1000)
+    }, TIMEOUT_MS - 60000)
+
+    timeoutRef.current = setTimeout(() => {
+      handleLogout()
+    }, TIMEOUT_MS)
+  }, [handleLogout])
 
   useEffect(() => {
-    checkAuth(); fetchData()
+    checkAuth()
+    fetchData()
+    resetTimer()
+
     const ch = supabase.channel('admin-rt')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'queue_items' }, fetchData)
       .subscribe()
-    return () => { supabase.removeChannel(ch) }
-  }, [])
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      if (warningRef.current) clearTimeout(warningRef.current)
+      if (countdownRef.current) clearInterval(countdownRef.current)
+      supabase.removeChannel(ch)
+    }
+  }, [resetTimer])
 
   async function checkAuth() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -136,6 +185,7 @@ export default function AdminDashboard() {
     setUpdating(id)
     await supabase.from('queue_items').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
     await fetchData(); setUpdating(null)
+    resetTimer()
   }
 
   const categoryData = sortQueue(data.filter(r => r.food_category === activeCat))
@@ -148,17 +198,29 @@ export default function AdminDashboard() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
+
+      {/* Auto-logout warning */}
+      {timeoutWarning && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-lg text-sm font-medium text-white flex items-center gap-3"
+          style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)', minWidth: 280 }}>
+          <span>⏱️ จะออกจากระบบใน {remainingSeconds} วินาที</span>
+          <button onClick={resetTimer} className="px-3 py-1 rounded-xl bg-white text-xs font-bold"
+            style={{ color: '#ef4444' }}>
+            ยังอยู่
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
         <div>
           <h1 className="text-xl font-bold" style={{ fontFamily: 'Georgia, serif', color: 'var(--bonnie-dark)' }}>Admin Dashboard</h1>
-          <p className="text-xs" style={{ color: 'var(--bonnie-muted)' }}>Bonnie Food Support</p>
+          <p className="text-xs" style={{ color: 'var(--bonnie-muted)' }}>Bonnie Food Support · ออกอัตโนมัติเมื่อไม่มีการแก้ไข 10 นาที</p>
         </div>
         <div className="flex gap-2">
           <a href="/" className="text-xs px-4 py-2 rounded-full border font-medium"
             style={{ borderColor: 'var(--bonnie-pink)', color: 'var(--bonnie-rose)', backgroundColor: 'white' }}>🏠 หน้าหลัก</a>
-          <button onClick={async () => { await supabase.auth.signOut(); router.push('/admin/login') }}
-            className="text-xs px-4 py-2 rounded-full border"
+          <button onClick={handleLogout} className="text-xs px-4 py-2 rounded-full border"
             style={{ borderColor: '#f3c6d0', color: 'var(--bonnie-muted)', backgroundColor: 'white' }}>ออกจากระบบ</button>
         </div>
       </div>
@@ -194,27 +256,20 @@ export default function AdminDashboard() {
 
       {/* Tab: กติกา */}
       {activeTab === 'rules' && (
-        <EditableSection
-          title="BONNIE'S FOOD BOOSTER Detail and Agreement"
-          emoji="📋"
-          settingKey="house_rules"
-          placeholder="พิมพ์กติกาและรายละเอียดที่นี่..."
-          rows={10}
-        />
+        <EditableSection title="BONNIE'S FOOD BOOSTER Detail and Agreement" emoji="📋" settingKey="house_rules" placeholder="พิมพ์กติกาและรายละเอียดที่นี่..." rows={10} onAction={resetTimer} />
       )}
 
       {/* Tab: หมายเหตุ */}
       {activeTab === 'notes' && (
         <div>
-          <EditableSection title="อาหารที่แนะนำ" emoji="❤️" settingKey="food_liked" placeholder="เช่น ข้าวมันไก่, ส้มตำ..." rows={4} />
-          <EditableSection title="อาหารที่แพ้" emoji="⚠️" settingKey="allergy_notice" placeholder="เช่น หมู, อาหารทะเล, ถั่ว..." rows={4} />
+          <EditableSection title="อาหารที่แนะนำ" emoji="❤️" settingKey="food_liked" placeholder="เช่น ข้าวมันไก่, ส้มตำ..." rows={4} onAction={resetTimer} />
+          <EditableSection title="อาหารที่แพ้" emoji="⚠️" settingKey="allergy_notice" placeholder="เช่น หมู, อาหารทะเล, ถั่ว..." rows={4} onAction={resetTimer} />
         </div>
       )}
 
       {/* Tab: จัดการคิว */}
       {activeTab === 'queue' && (
         <div>
-          {/* Category tabs */}
           <div className="flex gap-2 overflow-x-auto pb-2 mb-4" style={{ scrollbarWidth: 'none' }}>
             {CATEGORIES.map(({ key, icon }) => {
               const pending = data.filter(r => r.food_category === key && ['pending','contacting','unavailable'].includes(r.status)).length
@@ -247,9 +302,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm" style={{ color: statusFg(reg.status) }}>{reg.name}</div>
-                    <div className="text-xs truncate" style={{ color: 'var(--bonnie-muted)' }}>
-                      {reg.account}{reg.food_quantity ? ` · ${reg.food_quantity}` : ''}
-                    </div>
+                    <div className="text-xs truncate" style={{ color: 'var(--bonnie-muted)' }}>{reg.account}{reg.food_quantity ? ` · ${reg.food_quantity}` : ''}</div>
                     <div className="text-xs mt-0.5" style={{ color: '#b0919a' }}>
                       {reg.status === 'pending'
                         ? `ลงทะเบียน ${new Date(reg.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}`

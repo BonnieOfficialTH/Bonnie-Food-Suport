@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
@@ -8,8 +8,16 @@ export default function AdminLogin() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
+
+  useEffect(() => {
+    // If already logged in, go straight to dashboard
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.push('/admin/dashboard')
+      else setLoading(false)
+    })
+  }, [router])
 
   const handleLogin = async () => {
     setError('')
@@ -23,16 +31,19 @@ export default function AdminLogin() {
     router.push('/admin/dashboard')
   }
 
-  const inputClass = "w-full px-4 py-3 rounded-xl border text-sm bg-white"
-  const inputStyle = { borderColor: '#f3c6d0', color: 'var(--bonnie-dark)' }
+  const inp = "w-full px-4 py-3 rounded-xl border text-sm bg-white"
+  const inpStyle = { borderColor: '#f3c6d0', color: 'var(--bonnie-dark)' }
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="text-sm" style={{ color: 'var(--bonnie-muted)' }}>กำลังโหลด...</div>
+    </div>
+  )
 
   return (
     <div className="max-w-sm mx-auto mt-16">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4"
-          style={{ background: 'linear-gradient(135deg, var(--bonnie-pink), var(--bonnie-rose))' }}>
-          B
-        </div>
+        <img src="/logo.png" alt="Bonnie" className="h-16 w-auto mx-auto mb-4 object-contain" />
         <h1 className="text-2xl font-bold" style={{ fontFamily: 'Georgia, serif', color: 'var(--bonnie-dark)' }}>
           Admin Login
         </h1>
@@ -42,24 +53,22 @@ export default function AdminLogin() {
       <div className="bg-white rounded-3xl p-6 border" style={{ borderColor: '#f9dde5' }}>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--bonnie-muted)' }}>Email</label>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--bonnie-muted)' }}>Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              placeholder="admin@bonnie.com"
-              className={inputClass} style={inputStyle}
+              placeholder="admin@bonnie.com" className={inp} style={inpStyle}
               onKeyDown={e => e.key === 'Enter' && handleLogin()} />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--bonnie-muted)' }}>Password</label>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--bonnie-muted)' }}>Password</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className={inputClass} style={inputStyle}
+              placeholder="••••••••" className={inp} style={inpStyle}
               onKeyDown={e => e.key === 'Enter' && handleLogin()} />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-xs text-red-600">{error}</p>}
           <button onClick={handleLogin} disabled={loading}
             className="w-full py-3 rounded-2xl text-white font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
             style={{ background: 'linear-gradient(135deg, var(--bonnie-pink), var(--bonnie-rose))' }}>
-            {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
+            เข้าสู่ระบบ
           </button>
         </div>
       </div>
