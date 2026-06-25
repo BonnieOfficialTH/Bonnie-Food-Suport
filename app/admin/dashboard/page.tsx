@@ -25,10 +25,20 @@ const STATUSES: { value: RegistrationStatus; label: string; color: string }[] = 
 ]
 
 function sortQueue(items: QueueItem[]): QueueItem[] {
-  const active = items.filter(i => ['pending','unavailable','contacting'].includes(i.status)).sort((a,b) => a.category_queue_number - b.category_queue_number)
-  const sent = items.filter(i => i.status === 'sent').sort((a,b) => a.category_queue_number - b.category_queue_number)
-  const cancelled = items.filter(i => i.status === 'cancelled').sort((a,b) => a.category_queue_number - b.category_queue_number)
-  return [...active, ...sent, ...cancelled]
+  const order = { contacting: 0, pending: 1, unavailable: 2, sent: 3, cancelled: 4 }
+  return [...items].sort((a, b) => {
+    const oa = order[a.status as keyof typeof order] ?? 9
+    const ob = order[b.status as keyof typeof order] ?? 9
+    if (oa !== ob) return oa - ob
+    return a.category_queue_number - b.category_queue_number
+  })
+}
+
+function getDisplayNumber(item: QueueItem, sortedList: QueueItem[]): number | null {
+  const activeStatuses = ['contacting', 'pending', 'unavailable']
+  if (!activeStatuses.includes(item.status)) return null
+  const activeOnly = sortedList.filter(i => activeStatuses.includes(i.status))
+  return activeOnly.findIndex(i => i.id === item.id) + 1
 }
 function statusFg(s: RegistrationStatus) {
   switch(s) { case 'sent': return '#16a34a'; case 'contacting': return '#2563eb'; case 'cancelled': return '#dc2626'; case 'unavailable': return '#92400e'; default: return 'var(--bonnie-dark)' }
@@ -224,7 +234,7 @@ export default function AdminDashboard() {
                 <div className="px-4 py-3.5 flex items-center gap-3 cursor-pointer" onClick={() => setExpandedId(expandedId === reg.id ? null : reg.id)}>
                   <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs"
                     style={{ backgroundColor: 'var(--bonnie-warm)', color: 'var(--bonnie-rose)' }}>
-                    #{reg.category_queue_number}
+                    {getDisplayNumber(reg, categoryData) !== null ? `#${getDisplayNumber(reg, categoryData)}` : '—'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm" style={{ color: statusFg(reg.status) }}>{reg.name}</div>

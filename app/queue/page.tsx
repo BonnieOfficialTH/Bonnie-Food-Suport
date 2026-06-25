@@ -24,10 +24,21 @@ function censor(str: string): string {
 }
 
 function sortQueue(items: QueueItem[]): QueueItem[] {
-  const active = items.filter(i => ['pending','unavailable','contacting'].includes(i.status)).sort((a,b) => a.category_queue_number - b.category_queue_number)
-  const sent = items.filter(i => i.status === 'sent').sort((a,b) => a.category_queue_number - b.category_queue_number)
-  const cancelled = items.filter(i => i.status === 'cancelled').sort((a,b) => a.category_queue_number - b.category_queue_number)
-  return [...active, ...sent, ...cancelled]
+  const order = { contacting: 0, pending: 1, unavailable: 2, sent: 3, cancelled: 4 }
+  return [...items].sort((a, b) => {
+    const oa = order[a.status as keyof typeof order] ?? 9
+    const ob = order[b.status as keyof typeof order] ?? 9
+    if (oa !== ob) return oa - ob
+    return a.category_queue_number - b.category_queue_number
+  })
+}
+
+// Get display position number (1-based, grouped by active statuses only)
+function getDisplayNumber(item: QueueItem, sortedList: QueueItem[]): number | null {
+  const activeStatuses = ['contacting', 'pending', 'unavailable']
+  if (!activeStatuses.includes(item.status)) return null
+  const activeOnly = sortedList.filter(i => activeStatuses.includes(i.status))
+  return activeOnly.findIndex(i => i.id === item.id) + 1
 }
 
 function statusColor(status: string) {
@@ -84,10 +95,10 @@ export default function QueuePage() {
       {/* Legend */}
       <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-5 text-xs">
         {[
-          { s: 'pending', color: 'var(--bonnie-dark)', label: { th: 'รอดำเนินการ', en: 'Pending' } },
           { s: 'contacting', color: '#2563eb', label: { th: 'ระหว่างติดต่อ', en: 'In Contact' } },
-          { s: 'sent', color: '#16a34a', label: { th: 'ส่งแล้ว', en: 'Sent' } },
+          { s: 'pending', color: 'var(--bonnie-dark)', label: { th: 'รอดำเนินการ', en: 'Pending' } },
           { s: 'unavailable', color: '#92400e', label: { th: 'ไม่สะดวกในรอบ', en: 'Unavailable' } },
+          { s: 'sent', color: '#16a34a', label: { th: 'ส่งแล้ว', en: 'Sent' } },
           { s: 'cancelled', color: '#dc2626', label: { th: 'ยกเลิก', en: 'Cancelled' } },
         ].map(x => (
           <span key={x.s} className="flex items-center gap-1.5">
@@ -128,7 +139,7 @@ export default function QueuePage() {
           <div key={reg.id} className="bg-white rounded-2xl px-4 py-3.5 border flex items-center gap-3" style={{ borderColor: '#f9dde5' }}>
             <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs"
               style={{ backgroundColor: 'var(--bonnie-warm)', color: 'var(--bonnie-rose)' }}>
-              #{reg.category_queue_number}
+              {getDisplayNumber(reg, categoryData) !== null ? `#${getDisplayNumber(reg, categoryData)}` : '—'}
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm truncate" style={{ color: statusColor(reg.status) }}>
