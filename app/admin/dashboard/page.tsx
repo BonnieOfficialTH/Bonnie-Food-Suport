@@ -206,7 +206,7 @@ export default function AdminDashboard() {
       {/* Tab: หมายเหตุ */}
       {activeTab === 'notes' && (
         <div>
-          <EditableSection title="อาหารที่ชอบ" emoji="❤️" settingKey="food_liked" placeholder="เช่น ข้าวมันไก่, ส้มตำ..." rows={4} />
+          <EditableSection title="อาหารที่แนะนำ" emoji="❤️" settingKey="food_liked" placeholder="เช่น ข้าวมันไก่, ส้มตำ..." rows={4} />
           <EditableSection title="อาหารที่แพ้" emoji="⚠️" settingKey="allergy_notice" placeholder="เช่น หมู, อาหารทะเล, ถั่ว..." rows={4} />
         </div>
       )}

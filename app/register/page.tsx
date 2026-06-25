@@ -12,7 +12,7 @@ type FoodCat = 'savory' | 'dessert' | 'drink' | 'fruit'
 const tx = {
   th: {
     title: 'ลงทะเบียน',
-    allergyNotice: '⚠️ อาหารที่ทางบ้านขอให้หลีกเลี่ยง',
+    allergyNotice: '⚠️ อาหารที่แพ้',
     allergyEmpty: 'ไม่มีประกาศในขณะนี้',
     nameLabel: 'ชื่อ', namePlaceholder: 'ชื่อของท่าน',
     accountLabel: 'แอคเคาท์', accountPlaceholder: '@username หรือ Account ที่ใช้ติดต่อ',
@@ -24,7 +24,7 @@ const tx = {
     termsTitle: 'เงื่อนไขก่อนลงทะเบียน',
     cond1: 'กรณีที่เรียกคิวลงทะเบียนครบแล้ว และยังมีช่วงวันหรือเวลาว่างคงเหลือ ทางบ้านขออนุญาตติดต่อกลับเพื่อดำเนินการส่ง Food Support / Food Truck โดยเรียงตามหมวดหมู่ทันที ท่านสะดวกให้ดำเนินการในลักษณะนี้หรือไม่คะ?',
     convenient: 'สะดวก', notConvenient: 'ไม่สะดวก',
-    cond2: 'ท่านได้อ่านกติกาของทางบ้านอย่างครบถ้วน และยอมรับเงื่อนไขทั้งหมดแล้วก่อนลงทะเบียน',
+    cond2: 'ท่านได้อ่านรายละเอียดและข้อตกลงอย่างครบถ้วน และยอมรับเงื่อนไขทั้งหมดแล้วก่อนลงทะเบียน',
     submit: 'ส่งข้อมูล', submitting: 'กำลังส่ง...',
     successTitle: 'ลงทะเบียนสำเร็จ! 🌸', successMsg: 'ขอบคุณค่ะ ข้อมูลของท่านได้รับการบันทึกแล้ว',
     queueResult: 'เลขคิวที่ได้รับ', viewQueue: 'ดูคิวทั้งหมด', registerAnother: 'ลงทะเบียนใหม่',
@@ -36,7 +36,7 @@ const tx = {
   },
   en: {
     title: 'Register',
-    allergyNotice: '⚠️ Foods the house requests to avoid',
+    allergyNotice: '⚠️ Food Allergies',
     allergyEmpty: 'No announcements at this time',
     nameLabel: 'Name', namePlaceholder: 'Your name',
     accountLabel: 'Account', accountPlaceholder: '@username or contact account',
@@ -48,7 +48,7 @@ const tx = {
     termsTitle: 'Pre-registration Terms',
     cond1: 'If the registration queue is full but there are remaining time slots, may the team contact you to arrange delivery of Food Support / Food Truck ordered by category immediately?',
     convenient: 'Convenient', notConvenient: 'Not Convenient',
-    cond2: 'I have read all house rules completely and accept all conditions before registering.',
+    cond2: 'I have read and understood the details, terms, and conditions in full, and I agree to all conditions prior to registration.',
     submit: 'Submit', submitting: 'Submitting...',
     successTitle: 'Registered Successfully! 🌸', successMsg: 'Thank you! Your information has been recorded.',
     queueResult: 'Your Queue Numbers',viewQueue: 'View All Queues', registerAnother: 'Register Again',
@@ -193,7 +193,7 @@ export default function RegisterPage() {
         <div className="space-y-3">
           {foodLiked && (
             <div className="rounded-2xl p-4" style={{ backgroundColor: '#f0fdf4', border: '1.5px solid #bbf7d0' }}>
-              <div className="text-xs font-semibold mb-1.5" style={{ color: '#15803d' }}>❤️ {lang === 'th' ? 'อาหารที่ชอบ' : 'Liked Foods'}</div>
+              <div className="text-xs font-semibold mb-1.5" style={{ color: '#15803d' }}>❤️ {lang === 'th' ? 'อาหารที่แนะนำ' : 'Recommended Foods'}</div>
               <div className="text-sm leading-relaxed rich-content" style={{ color: '#14532d' }} dangerouslySetInnerHTML={{ __html: foodLiked }} />
             </div>
           )}

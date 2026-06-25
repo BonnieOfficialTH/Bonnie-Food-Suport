@@ -21,14 +21,14 @@ export default function HomePage() {
           Food Support
         </h1>
         <p className="text-sm" style={{ color: 'var(--bonnie-muted)' }}>
-          {lang === 'th' ? 'อ่านกติกาให้ครบก่อนลงทะเบียนนะคะ' : 'Please read all rules before registering.'}
+          {lang === 'th' ? '💜 ก่อนลงทะเบียนรบกวนอ่านรายละเอียดและข้อตกลงก่อนนะคะ' : 'Please read the details and terms & conditions before registering.'}
         </p>
       </div>
 
       <div className="flex items-center gap-3 mb-5">
         <div className="h-px flex-1" style={{ backgroundColor: '#f3c6d0' }} />
         <h2 className="text-sm font-bold text-center" style={{ color: 'var(--bonnie-dark)', fontFamily: 'Georgia, serif' }}>
-          {lang === 'th' ? 'รายละเอียดเงื่อนไขและข้อตกลงสำหรับการลงทะเบียน Food Support ของบอนนี่' : "BONNIE'S FOOD BOOSTER Detail and Agreement"}
+          {lang === 'th' ? 'รายละเอียดเงื่อนไขและข้อตกลงสำหรับการลงทะเบียน Food Support ของบอนนี่' : 'Food Support Registration Terms, Conditions, and Details'}
         </h2>
         <div className="h-px flex-1" style={{ backgroundColor: '#f3c6d0' }} />
       </div>

@@ -12,8 +12,8 @@ function Header() {
   if (isAdmin) return null
 
   const tabs = [
-    { href: '/',         th: 'กติกา',     en: 'Rules'    },
-    { href: '/queue',    th: 'คิว',        en: 'Queue'    },
+    { href: '/',         th: 'รายละเอียด', en: 'Details'    },
+    { href: '/queue',    th: 'ลำดับ',     en: 'Queue'    },
     { href: '/register', th: 'ลงทะเบียน', en: 'Register' },
   ]
 
@@ -36,10 +36,10 @@ function Header() {
           <div className="flex items-center gap-2">
             {/* Social links */}
             <div className="hidden sm:flex items-center gap-2 text-xs" style={{ color: 'var(--bonnie-muted)' }}>
-              <a href="https://x.com/bonnieofficialth_" target="_blank" rel="noopener noreferrer"
+              <a href="https://x.com/bonnieofficial_" target="_blank" rel="noopener noreferrer"
                 className="hover:opacity-70 transition-opacity flex items-center gap-1">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                @bonnieofficialth_
+                @bonnieofficial_
               </a>
               <span style={{ color: '#f3c6d0' }}>|</span>
               <a href="https://instagram.com/bonnieofficialth" target="_blank" rel="noopener noreferrer"
@@ -67,10 +67,10 @@ function Header() {
 
         {/* Social links on mobile */}
         <div className="flex sm:hidden items-center gap-3 text-xs pb-2" style={{ color: 'var(--bonnie-muted)' }}>
-          <a href="https://x.com/bonnieofficialth_" target="_blank" rel="noopener noreferrer"
+          <a href="https://x.com/bonnieofficial_" target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-1">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            @bonnieofficialth_
+            @bonnieofficial_
           </a>
           <span style={{ color: '#f3c6d0' }}>|</span>
           <a href="https://instagram.com/bonnieofficialth" target="_blank" rel="noopener noreferrer"

@@ -93,17 +93,15 @@ export default function QueuePage() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif', color: 'var(--bonnie-dark)' }}>
-          {lang === 'th' ? 'คิวการลงทะเบียน' : 'Registration Queue'}
+          {lang === 'th' ? 'ลำดับการลงทะเบียน' : 'Registration Queue'}
         </h1>
-        <p className="text-xs" style={{ color: 'var(--bonnie-muted)' }}>
-          {lang === 'th' ? '🔄 อัปเดตอัตโนมัติ' : '🔄 Auto-updates in real time'}
-        </p>
+
       </div>
 
       {/* Legend */}
       <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-5 text-xs">
         {[
-          { s: 'contacting', color: '#2563eb', label: { th: 'ระหว่างติดต่อ', en: 'In Contact' } },
+          { s: 'contacting', color: '#2563eb', label: { th: 'ระหว่างติดต่อ', en: 'Contacting' } },
           { s: 'pending', color: 'var(--bonnie-dark)', label: { th: 'รอดำเนินการ', en: 'Pending' } },
           { s: 'unavailable', color: '#92400e', label: { th: 'ไม่สะดวกในรอบ', en: 'Unavailable' } },
           { s: 'sent', color: '#16a34a', label: { th: 'ส่งแล้ว', en: 'Sent' } },

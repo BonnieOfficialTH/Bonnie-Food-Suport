@@ -24,7 +24,7 @@ export interface Registration extends QueueItem {
 }
 
 export const FOOD_CATEGORY_LABELS: Record<FoodCategory, { th: string; en: string }> = {
-  savory: { th: 'อาหารคาว', en: 'Savory Food' },
+  savory: { th: 'อาหารคาว', en: 'Main Dish' },
   dessert: { th: 'ของหวาน', en: 'Dessert' },
   drink: { th: 'เครื่องดื่ม', en: 'Drinks' },
   fruit: { th: 'ผลไม้', en: 'Fruits' },
@@ -35,6 +35,6 @@ export const STATUS_LABELS: Record<RegistrationStatus, { th: string; en: string 
   pending: { th: 'รอดำเนินการ', en: 'Pending' },
   sent: { th: 'ส่งแล้ว', en: 'Sent' },
   unavailable: { th: 'ไม่สะดวกส่งในรอบ', en: 'Unavailable This Round' },
-  contacting: { th: 'ระหว่างการติดต่อ', en: 'In Contact' },
+  contacting: { th: 'ระหว่างการติดต่อ', en: 'Contacting' },
   cancelled: { th: 'ยกเลิกคิว', en: 'Cancelled' },
 }
