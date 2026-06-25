@@ -35,23 +35,83 @@ function statusBg(s: RegistrationStatus) {
   switch(s) { case 'sent': return '#dcfce7'; case 'contacting': return '#dbeafe'; case 'cancelled': return '#fee2e2'; case 'unavailable': return '#fef3c7'; default: return 'var(--bonnie-warm)' }
 }
 
+// Reusable editable section component
+function EditableSection({ title, emoji, settingKey, placeholder, rows = 4 }: {
+  title: string; emoji: string; settingKey: string; placeholder: string; rows?: number
+}) {
+  const [value, setValue] = useState('')
+  const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [draft, setDraft] = useState('')
+
+  useEffect(() => {
+    supabase.from('settings').select('value').eq('key', settingKey).single()
+      .then(({ data }) => { if (data?.value) setValue(data.value) })
+  }, [settingKey])
+
+  const handleEdit = () => { setDraft(value); setEditing(true) }
+  const handleSave = async () => {
+    setSaving(true)
+    await supabase.from('settings').upsert({ key: settingKey, value: draft }, { onConflict: 'key' })
+    setValue(draft)
+    setEditing(false)
+    setSaving(false)
+  }
+  const handleCancel = () => { setEditing(false); setDraft('') }
+
+  return (
+    <div className="bg-white rounded-2xl p-4 border mb-4" style={{ borderColor: '#f9dde5' }}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-xs font-semibold" style={{ color: 'var(--bonnie-dark)' }}>
+          {emoji} {title}
+        </div>
+        {!editing ? (
+          <button onClick={handleEdit}
+            className="text-xs px-3 py-1 rounded-full border font-medium transition-colors"
+            style={{ borderColor: 'var(--bonnie-pink)', color: 'var(--bonnie-rose)', backgroundColor: 'white' }}>
+            ✏️ แก้ไข
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <button onClick={handleCancel}
+              className="text-xs px-3 py-1 rounded-full border"
+              style={{ borderColor: '#e5e7eb', color: 'var(--bonnie-muted)', backgroundColor: 'white' }}>
+              ยกเลิก
+            </button>
+            <button onClick={handleSave} disabled={saving}
+              className="text-xs px-3 py-1 rounded-full text-white font-medium disabled:opacity-60"
+              style={{ background: 'linear-gradient(135deg, var(--bonnie-pink), var(--bonnie-rose))' }}>
+              {saving ? 'กำลังบันทึก...' : '💾 บันทึก'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {editing ? (
+        <RichEditor value={draft} onChange={setDraft} placeholder={placeholder} rows={rows} />
+      ) : (
+        <div className="text-sm leading-relaxed min-h-[40px]"
+          style={{ color: value ? 'var(--bonnie-dark)' : 'var(--bonnie-muted)' }}>
+          {value
+            ? <div className="rich-content" dangerouslySetInnerHTML={{ __html: value }} />
+            : <span className="italic">{placeholder}</span>}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function AdminDashboard() {
   const [data, setData] = useState<Registration[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<FoodCategory>('savory')
   const [updating, setUpdating] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [allergyNotice, setAllergyNotice] = useState('')
-  const [savingNotice, setSavingNotice] = useState(false)
-  const [houseRules, setHouseRules] = useState('')
-  const [savingRules, setSavingRules] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
     checkAuth()
     fetchData()
-    fetchNotice()
-    fetchRules()
     const ch = supabase.channel('admin-rt')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'registrations' }, fetchData)
       .subscribe()
@@ -66,24 +126,6 @@ export default function AdminDashboard() {
     const { data: rows } = await supabase.from('registrations').select('*').order('queue_number')
     setData(rows || [])
     setLoading(false)
-  }
-  async function fetchNotice() {
-    const { data } = await supabase.from('settings').select('value').eq('key', 'allergy_notice').single()
-    if (data?.value) setAllergyNotice(data.value)
-  }
-  async function fetchRules() {
-    const { data } = await supabase.from('settings').select('value').eq('key', 'house_rules').single()
-    if (data?.value) setHouseRules(data.value)
-  }
-  async function saveRules() {
-    setSavingRules(true)
-    await supabase.from('settings').upsert({ key: 'house_rules', value: houseRules }, { onConflict: 'key' })
-    setSavingRules(false)
-  }
-  async function saveNotice() {
-    setSavingNotice(true)
-    await supabase.from('settings').upsert({ key: 'allergy_notice', value: allergyNotice }, { onConflict: 'key' })
-    setSavingNotice(false)
   }
   async function updateStatus(id: string, status: RegistrationStatus) {
     setUpdating(id)
@@ -101,14 +143,21 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
         <div>
           <h1 className="text-xl font-bold" style={{ fontFamily: 'Georgia, serif', color: 'var(--bonnie-dark)' }}>Admin Dashboard</h1>
           <p className="text-xs" style={{ color: 'var(--bonnie-muted)' }}>Bonnie Food Support</p>
         </div>
-        <button onClick={handleLogout} className="text-xs px-4 py-2 rounded-full border" style={{ borderColor: '#f3c6d0', color: 'var(--bonnie-muted)' }}>
-          ออกจากระบบ
-        </button>
+        <div className="flex gap-2">
+          <a href="/" className="text-xs px-4 py-2 rounded-full border font-medium transition-colors"
+            style={{ borderColor: 'var(--bonnie-pink)', color: 'var(--bonnie-rose)', backgroundColor: 'white' }}>
+            🏠 หน้าหลัก
+          </a>
+          <button onClick={handleLogout} className="text-xs px-4 py-2 rounded-full border"
+            style={{ borderColor: '#f3c6d0', color: 'var(--bonnie-muted)', backgroundColor: 'white' }}>
+            ออกจากระบบ
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -126,44 +175,35 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Allergy Notice Editor */}
-      <div className="bg-white rounded-2xl p-4 border mb-6" style={{ borderColor: '#f9dde5' }}>
-        <div className="text-xs font-semibold mb-2" style={{ color: 'var(--bonnie-dark)' }}>
-          ⚠️ ประกาศอาหารที่ขอให้หลีกเลี่ยง (แสดงในหน้าลงทะเบียน)
-        </div>
-        <RichEditor
-          value={allergyNotice}
-          onChange={setAllergyNotice}
-          placeholder="เช่น หมู, อาหารทะเล, ถั่ว..."
-          rows={3}
-        />
-        <button onClick={saveNotice} disabled={savingNotice}
-          className="mt-2 px-4 py-2 rounded-xl text-white text-xs font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
-          style={{ background: 'linear-gradient(135deg, var(--bonnie-pink), var(--bonnie-rose))' }}>
-          {savingNotice ? 'กำลังบันทึก...' : 'บันทึก'}
-        </button>
-      </div>
+      {/* Editable sections */}
+      <EditableSection
+        title="BONNIE'S FOOD BOOSTER Detail and Agreement"
+        emoji="📋"
+        settingKey="house_rules"
+        placeholder="พิมพ์กติกาและรายละเอียดที่นี่..."
+        rows={6}
+      />
 
-      {/* House Rules Editor */}
-      <div className="bg-white rounded-2xl p-4 border mb-6" style={{ borderColor: '#f9dde5' }}>
-        <div className="text-xs font-semibold mb-2" style={{ color: 'var(--bonnie-dark)' }}>
-          📋 กติกาของบ้าน (แสดงในหน้าแรก)
-        </div>
-        <RichEditor
-          value={houseRules}
-          onChange={setHouseRules}
-          placeholder="พิมพ์กติกาของบ้านที่นี่..."
-          rows={6}
-        />
-        <button onClick={saveRules} disabled={savingRules}
-          className="mt-2 px-4 py-2 rounded-xl text-white text-xs font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
-          style={{ background: 'linear-gradient(135deg, var(--bonnie-pink), var(--bonnie-rose))' }}>
-          {savingRules ? 'กำลังบันทึก...' : 'บันทึกกติกา'}
-        </button>
+      <div className="text-xs font-semibold mb-2 mt-2" style={{ color: 'var(--bonnie-dark)' }}>
+        📌 หมายเหตุ
       </div>
+      <EditableSection
+        title="อาหารที่ชอบ"
+        emoji="❤️"
+        settingKey="food_liked"
+        placeholder="เช่น ข้าวมันไก่, ส้มตำ..."
+        rows={3}
+      />
+      <EditableSection
+        title="อาหารที่แพ้"
+        emoji="⚠️"
+        settingKey="allergy_notice"
+        placeholder="เช่น หมู, อาหารทะเล, ถั่ว..."
+        rows={3}
+      />
 
       {/* Category tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-4" style={{ scrollbarWidth: 'none' }}>
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-4 mt-2" style={{ scrollbarWidth: 'none' }}>
         {CATEGORIES.map(({ key, icon }) => {
           const pending = data.filter(r => r.food_category === key && r.status === 'pending').length
           return (

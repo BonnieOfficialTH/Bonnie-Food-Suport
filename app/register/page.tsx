@@ -73,9 +73,13 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState<{ queueNumber: number } | null>(null)
 
+  const [foodLiked, setFoodLiked] = useState('')
+
   useEffect(() => {
     supabase.from('settings').select('value').eq('key', 'allergy_notice').single()
       .then(({ data }) => { if (data?.value) setAllergyNotice(data.value) })
+    supabase.from('settings').select('value').eq('key', 'food_liked').single()
+      .then(({ data }) => { if (data?.value) setFoodLiked(data.value) })
   }, [])
 
   const handleSubmit = async () => {
