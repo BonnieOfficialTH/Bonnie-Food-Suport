@@ -121,6 +121,10 @@ export default function AdminDashboard() {
   const [activeCat, setActiveCat] = useState<FoodCategory>('savory')
   const [updating, setUpdating] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+  const [deleting, setDeleting] = useState(false)
   const [timeoutWarning, setTimeoutWarning] = useState(false)
   const [remainingSeconds, setRemainingSeconds] = useState(0)
   const router = useRouter()
@@ -181,6 +185,25 @@ export default function AdminDashboard() {
     const { data: rows } = await supabase.from('queue_items').select('*').order('category_queue_number')
     setData(rows || []); setLoading(false)
   }
+  async function deleteItem() {
+    if (!deleteId) return
+    setDeleting(true)
+    setDeleteError('')
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user?.email) { setDeleteError('ไม่พบข้อมูล session'); setDeleting(false); return }
+    const { error } = await supabase.auth.signInWithPassword({
+      email: session.user.email,
+      password: deletePassword,
+    })
+    if (error) { setDeleteError('รหัสผ่านไม่ถูกต้อง'); setDeleting(false); return }
+    await supabase.from('queue_items').delete().eq('id', deleteId)
+    await fetchData()
+    setDeleteId(null)
+    setDeletePassword('')
+    setDeleteError('')
+    setDeleting(false)
+  }
+
   async function updateStatus(id: string, status: RegistrationStatus) {
     setUpdating(id)
     await supabase.from('queue_items').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
@@ -198,6 +221,44 @@ export default function AdminDashboard() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
+
+      {/* Delete confirmation modal */}
+      {deleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm border" style={{ borderColor: '#E9D5FF' }}>
+            <h3 className="font-bold text-base mb-1" style={{ fontFamily: 'Georgia, serif', color: 'var(--bonnie-dark)' }}>
+              ยืนยันการลบคิว
+            </h3>
+            <p className="text-xs mb-4" style={{ color: 'var(--bonnie-muted)' }}>
+              กรุณาใส่รหัสผ่าน Admin เพื่อยืนยัน
+            </p>
+            <input
+              type="password"
+              value={deletePassword}
+              onChange={e => { setDeletePassword(e.target.value); setDeleteError('') }}
+              placeholder="รหัสผ่าน"
+              onKeyDown={e => e.key === 'Enter' && deleteItem()}
+              className="w-full px-4 py-3 rounded-xl border text-sm bg-white mb-3"
+              style={{ borderColor: '#E9D5FF', color: 'var(--bonnie-dark)' }}
+              autoFocus
+            />
+            {deleteError && <p className="text-xs text-red-600 mb-3">{deleteError}</p>}
+            <div className="flex gap-2">
+              <button onClick={() => { setDeleteId(null); setDeletePassword(''); setDeleteError('') }}
+                className="flex-1 py-2.5 rounded-xl text-sm border"
+                style={{ borderColor: '#E9D5FF', color: 'var(--bonnie-muted)', backgroundColor: 'white' }}>
+                ยกเลิก
+              </button>
+              <button onClick={deleteItem} disabled={deleting || !deletePassword}
+                className="flex-1 py-2.5 rounded-xl text-sm text-white font-medium disabled:opacity-50"
+                style={{ backgroundColor: '#dc2626' }}>
+                {deleting ? 'กำลังลบ...' : '🗑 ลบคิวนี้'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Auto-logout warning */}
       {timeoutWarning && (
@@ -342,6 +403,13 @@ export default function AdminDashboard() {
                           {s.label}
                         </button>
                       ))}
+                    </div>
+                    <div className="mt-3 pt-3 border-t" style={{ borderColor: '#F3E8FF' }}>
+                      <button onClick={() => { setDeleteId(reg.id); setDeletePassword(''); setDeleteError('') }}
+                        className="text-xs px-3 py-1.5 rounded-xl border font-medium"
+                        style={{ borderColor: '#fca5a5', color: '#dc2626', backgroundColor: '#fef2f2' }}>
+                        🗑 ลบคิวนี้
+                      </button>
                     </div>
                   </div>
                 )}
