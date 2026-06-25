@@ -43,7 +43,7 @@ const tx = {
     typeLabel: 'Delivery Type',
     foodSupport: 'Food Support', foodTruck: 'Food Truck',
     catLabel: 'Food Category (select multiple)',
-    savory: 'Savory Food', dessert: 'Dessert', drink: 'Drinks', fruit: 'Fruits',
+    savory: 'Main Dish', dessert: 'Dessert', drink: 'Drinks', fruit: 'Fruits',
     qtyLabel: 'Food Quantity', qtyPlaceholder: 'e.g. Chicken rice 30 boxes',
     termsTitle: 'Pre-registration Terms',
     cond1: 'If the registration queue is full but there are remaining time slots, may the team contact you to arrange delivery of Food Support / Food Truck ordered by category immediately?',
