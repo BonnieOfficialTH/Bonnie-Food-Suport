@@ -140,12 +140,23 @@ export default function RegisterPage() {
 
       <div className="bg-white rounded-3xl p-5 md:p-7 border space-y-5" style={{ borderColor: '#f9dde5' }}>
 
-        {/* Allergy notice from admin */}
-        <div className="rounded-2xl p-4" style={{ backgroundColor: '#fff7ed', border: '1.5px solid #fed7aa' }}>
-          <div className="text-xs font-semibold mb-1.5" style={{ color: '#c2410c' }}>{t.allergyNotice}</div>
-          <p className="text-sm leading-relaxed" style={{ color: allergyNotice ? '#7c2d12' : 'var(--bonnie-muted)' }}>
-            {allergyNotice || t.allergyEmpty}
-          </p>
+        {/* Notices from admin */}
+        <div className="space-y-3">
+          {foodLiked && (
+            <div className="rounded-2xl p-4" style={{ backgroundColor: '#f0fdf4', border: '1.5px solid #bbf7d0' }}>
+              <div className="text-xs font-semibold mb-1.5" style={{ color: '#15803d' }}>
+                ❤️ {lang === 'th' ? 'อาหารที่ชอบ' : 'Liked Foods'}
+              </div>
+              <div className="text-sm leading-relaxed rich-content" style={{ color: '#14532d' }} dangerouslySetInnerHTML={{ __html: foodLiked }} />
+            </div>
+          )}
+          <div className="rounded-2xl p-4" style={{ backgroundColor: '#fff7ed', border: '1.5px solid #fed7aa' }}>
+            <div className="text-xs font-semibold mb-1.5" style={{ color: '#c2410c' }}>{t.allergyNotice}</div>
+            {allergyNotice
+              ? <div className="text-sm leading-relaxed rich-content" style={{ color: '#7c2d12' }} dangerouslySetInnerHTML={{ __html: allergyNotice }} />
+              : <p className="text-sm" style={{ color: 'var(--bonnie-muted)' }}>{t.allergyEmpty}</p>
+            }
+          </div>
         </div>
 
         {/* Name & Account */}

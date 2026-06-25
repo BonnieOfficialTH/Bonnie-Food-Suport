@@ -27,8 +27,8 @@ export default function HomePage() {
 
       <div className="flex items-center gap-3 mb-5">
         <div className="h-px flex-1" style={{ backgroundColor: '#f3c6d0' }} />
-        <h2 className="text-base font-bold" style={{ color: 'var(--bonnie-dark)', fontFamily: 'Georgia, serif' }}>
-          {lang === 'th' ? 'กติกาของบ้าน' : 'House Rules'}
+        <h2 className="text-sm font-bold text-center" style={{ color: 'var(--bonnie-dark)', fontFamily: 'Georgia, serif' }}>
+          {lang === 'th' ? 'รายละเอียดเงื่อนไขและข้อตกลงสำหรับการลงทะเบียน Food Support ของบอนนี่' : "BONNIE'S FOOD BOOSTER Detail and Agreement"}
         </h2>
         <div className="h-px flex-1" style={{ backgroundColor: '#f3c6d0' }} />
       </div>
