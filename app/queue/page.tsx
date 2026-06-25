@@ -132,11 +132,13 @@ export default function QueuePage() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm truncate" style={{ color: statusColor(reg.status) }}>
-                {censor(reg.name)}
+                {censor(reg.account)}
               </div>
-              <div className="text-xs truncate mt-0.5" style={{ color: 'var(--bonnie-muted)' }}>
-                {censor(reg.account)}{reg.food_quantity ? ` · ${reg.food_quantity}` : ''}
-              </div>
+              {reg.food_quantity && (
+                <div className="text-xs truncate mt-0.5" style={{ color: 'var(--bonnie-muted)' }}>
+                  {reg.food_quantity}
+                </div>
+              )}
             </div>
             <span className="flex-shrink-0 text-xs px-2.5 py-1 rounded-full font-medium"
               style={{ backgroundColor: statusBg(reg.status), color: statusColor(reg.status) }}>

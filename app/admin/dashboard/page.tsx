@@ -6,6 +6,8 @@ import { QueueItem, FoodCategory, FOOD_CATEGORY_LABELS, STATUS_LABELS, Registrat
 import { useRouter } from 'next/navigation'
 import RichEditor from '@/components/RichEditor'
 
+type AdminTab = 'rules' | 'notes' | 'queue'
+
 const CATEGORIES: { key: FoodCategory; icon: string }[] = [
   { key: 'savory', icon: '🍱' },
   { key: 'dessert', icon: '🍰' },
@@ -29,7 +31,7 @@ function sortQueue(items: QueueItem[]): QueueItem[] {
   return [...active, ...sent, ...cancelled]
 }
 function statusFg(s: RegistrationStatus) {
-  switch(s) { case 'sent': return '#16a34a'; case 'contacting': return '#2563eb'; case 'cancelled': return '#dc2626'; case 'unavailable': return '#92400e'; default: return 'var(--bonnie-muted)' }
+  switch(s) { case 'sent': return '#16a34a'; case 'contacting': return '#2563eb'; case 'cancelled': return '#dc2626'; case 'unavailable': return '#92400e'; default: return 'var(--bonnie-dark)' }
 }
 function statusBg(s: RegistrationStatus) {
   switch(s) { case 'sent': return '#dcfce7'; case 'contacting': return '#dbeafe'; case 'cancelled': return '#fee2e2'; case 'unavailable': return '#fef3c7'; default: return 'var(--bonnie-warm)' }
@@ -48,7 +50,6 @@ function EditableSection({ title, emoji, settingKey, placeholder, rows = 4 }: {
       .then(({ data }) => { if (data?.value) setValue(data.value) })
   }, [settingKey])
 
-  const handleEdit = () => { setDraft(value); setEditing(true) }
   const handleSave = async () => {
     setSaving(true)
     await supabase.from('settings').upsert({ key: settingKey, value: draft }, { onConflict: 'key' })
@@ -57,11 +58,14 @@ function EditableSection({ title, emoji, settingKey, placeholder, rows = 4 }: {
 
   return (
     <div className="bg-white rounded-2xl p-4 border mb-4" style={{ borderColor: '#f9dde5' }}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-xs font-semibold" style={{ color: 'var(--bonnie-dark)' }}>{emoji} {title}</div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-sm font-semibold" style={{ color: 'var(--bonnie-dark)' }}>{emoji} {title}</div>
         {!editing ? (
-          <button onClick={handleEdit} className="text-xs px-3 py-1 rounded-full border font-medium"
-            style={{ borderColor: 'var(--bonnie-pink)', color: 'var(--bonnie-rose)', backgroundColor: 'white' }}>✏️ แก้ไข</button>
+          <button onClick={() => { setDraft(value); setEditing(true) }}
+            className="text-xs px-3 py-1 rounded-full border font-medium"
+            style={{ borderColor: 'var(--bonnie-pink)', color: 'var(--bonnie-rose)', backgroundColor: 'white' }}>
+            ✏️ แก้ไข
+          </button>
         ) : (
           <div className="flex gap-2">
             <button onClick={() => setEditing(false)} className="text-xs px-3 py-1 rounded-full border"
@@ -85,9 +89,10 @@ function EditableSection({ title, emoji, settingKey, placeholder, rows = 4 }: {
 }
 
 export default function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState<AdminTab>('queue')
   const [data, setData] = useState<QueueItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<FoodCategory>('savory')
+  const [activeCat, setActiveCat] = useState<FoodCategory>('savory')
   const [updating, setUpdating] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const router = useRouter()
@@ -114,10 +119,17 @@ export default function AdminDashboard() {
     await fetchData(); setUpdating(null)
   }
 
-  const categoryData = sortQueue(data.filter(r => r.food_category === activeTab))
+  const categoryData = sortQueue(data.filter(r => r.food_category === activeCat))
+
+  const ADMIN_TABS: { key: AdminTab; label: string }[] = [
+    { key: 'queue', label: '📋 จัดการคิว' },
+    { key: 'rules', label: '📜 กติกา' },
+    { key: 'notes', label: '📌 หมายเหตุ' },
+  ]
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
         <div>
           <h1 className="text-xl font-bold" style={{ fontFamily: 'Georgia, serif', color: 'var(--bonnie-dark)' }}>Admin Dashboard</h1>
@@ -147,85 +159,118 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <EditableSection title="BONNIE'S FOOD BOOSTER Detail and Agreement" emoji="📋" settingKey="house_rules" placeholder="พิมพ์กติกาและรายละเอียดที่นี่..." rows={6} />
-      <div className="text-xs font-semibold mb-2" style={{ color: 'var(--bonnie-dark)' }}>📌 หมายเหตุ</div>
-      <EditableSection title="อาหารที่ชอบ" emoji="❤️" settingKey="food_liked" placeholder="เช่น ข้าวมันไก่, ส้มตำ..." rows={3} />
-      <EditableSection title="อาหารที่แพ้" emoji="⚠️" settingKey="allergy_notice" placeholder="เช่น หมู, อาหารทะเล, ถั่ว..." rows={3} />
-
-      {/* Category tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-4 mt-2" style={{ scrollbarWidth: 'none' }}>
-        {CATEGORIES.map(({ key, icon }) => {
-          const pending = data.filter(r => r.food_category === key && r.status === 'pending').length
-          return (
-            <button key={key} onClick={() => setActiveTab(key)}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${activeTab === key ? 'tab-active' : 'tab-inactive'}`}>
-              {icon} {FOOD_CATEGORY_LABELS[key].th}
-              {pending > 0 && (
-                <span className="w-4 h-4 rounded-full text-xs flex items-center justify-center"
-                  style={{ backgroundColor: activeTab === key ? 'rgba(255,255,255,0.3)' : 'var(--bonnie-warm)', color: activeTab === key ? 'white' : 'var(--bonnie-rose)' }}>
-                  {pending}
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
-
-      <div className="space-y-2.5">
-        {loading ? (
-          <div className="text-center py-12 text-sm" style={{ color: 'var(--bonnie-muted)' }}>กำลังโหลด...</div>
-        ) : categoryData.length === 0 ? (
-          <div className="text-center py-10 bg-white rounded-2xl border text-sm" style={{ borderColor: '#f9dde5', color: 'var(--bonnie-muted)' }}>ยังไม่มีการลงทะเบียน</div>
-        ) : categoryData.map(reg => (
-          <div key={reg.id} className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: '#f9dde5' }}>
-            <div className="px-4 py-3.5 flex items-center gap-3 cursor-pointer" onClick={() => setExpandedId(expandedId === reg.id ? null : reg.id)}>
-              <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs"
-                style={{ backgroundColor: 'var(--bonnie-warm)', color: 'var(--bonnie-rose)' }}>
-                #{reg.category_queue_number}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-sm" style={{ color: statusFg(reg.status) }}>{reg.name}</div>
-                <div className="text-xs truncate" style={{ color: 'var(--bonnie-muted)' }}>{reg.account}{reg.food_quantity ? ` · ${reg.food_quantity}` : ''}</div>
-              </div>
-              <span className="text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0"
-                style={{ backgroundColor: statusBg(reg.status), color: statusFg(reg.status) }}>
-                {STATUS_LABELS[reg.status].th}
-              </span>
-              <span className="text-xs flex-shrink-0" style={{ color: 'var(--bonnie-muted)' }}>{expandedId === reg.id ? '▲' : '▼'}</span>
-            </div>
-            {expandedId === reg.id && (
-              <div className="px-4 pb-4 border-t" style={{ borderColor: '#f9dde5' }}>
-                <div className="grid grid-cols-2 gap-2 my-3 text-xs">
-                  {[
-                    { label: 'ชื่อ', value: reg.name },
-                    { label: 'แอคเคาท์', value: reg.account },
-                    { label: 'ประเภท', value: reg.registration_type === 'food_support' ? 'Food Support' : 'Food Truck' },
-                    reg.food_quantity ? { label: 'จำนวน', value: reg.food_quantity } : null,
-                    { label: 'สะดวกติดต่อกลับ', value: reg.convenience_choice === 'convenient' ? '✓ สะดวก' : '✗ ไม่สะดวก' },
-                    { label: 'ลงทะเบียนเมื่อ', value: new Date(reg.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) },
-                  ].filter(Boolean).map((item: any) => (
-                    <div key={item.label} className="p-2.5 rounded-xl" style={{ backgroundColor: 'var(--bonnie-cream)' }}>
-                      <div className="font-medium mb-0.5" style={{ color: 'var(--bonnie-muted)' }}>{item.label}</div>
-                      <div style={{ color: 'var(--bonnie-dark)' }}>{item.value}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="text-xs font-medium mb-2" style={{ color: 'var(--bonnie-muted)' }}>เปลี่ยนสถานะ</div>
-                <div className="flex flex-wrap gap-2">
-                  {STATUSES.map(s => (
-                    <button key={s.value} onClick={() => updateStatus(reg.id, s.value)}
-                      disabled={updating === reg.id || reg.status === s.value}
-                      className="px-3 py-1.5 rounded-xl text-xs font-medium border-2 transition-all disabled:opacity-50"
-                      style={{ borderColor: reg.status === s.value ? s.color : 'transparent', backgroundColor: reg.status === s.value ? s.color + '20' : '#f9fafb', color: s.color }}>
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+      {/* Admin Tabs */}
+      <div className="flex gap-2 mb-6 border-b" style={{ borderColor: '#f9dde5' }}>
+        {ADMIN_TABS.map(tab => (
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+            className="px-4 py-2.5 text-xs font-semibold transition-colors relative flex-shrink-0"
+            style={{ color: activeTab === tab.key ? 'var(--bonnie-rose)' : 'var(--bonnie-muted)' }}>
+            {tab.label}
+            {activeTab === tab.key && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ backgroundColor: 'var(--bonnie-rose)' }} />
             )}
-          </div>
+          </button>
         ))}
       </div>
+
+      {/* Tab: กติกา */}
+      {activeTab === 'rules' && (
+        <EditableSection
+          title="BONNIE'S FOOD BOOSTER Detail and Agreement"
+          emoji="📋"
+          settingKey="house_rules"
+          placeholder="พิมพ์กติกาและรายละเอียดที่นี่..."
+          rows={10}
+        />
+      )}
+
+      {/* Tab: หมายเหตุ */}
+      {activeTab === 'notes' && (
+        <div>
+          <EditableSection title="อาหารที่ชอบ" emoji="❤️" settingKey="food_liked" placeholder="เช่น ข้าวมันไก่, ส้มตำ..." rows={4} />
+          <EditableSection title="อาหารที่แพ้" emoji="⚠️" settingKey="allergy_notice" placeholder="เช่น หมู, อาหารทะเล, ถั่ว..." rows={4} />
+        </div>
+      )}
+
+      {/* Tab: จัดการคิว */}
+      {activeTab === 'queue' && (
+        <div>
+          {/* Category tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-4" style={{ scrollbarWidth: 'none' }}>
+            {CATEGORIES.map(({ key, icon }) => {
+              const pending = data.filter(r => r.food_category === key && r.status === 'pending').length
+              return (
+                <button key={key} onClick={() => setActiveCat(key)}
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${activeCat === key ? 'tab-active' : 'tab-inactive'}`}>
+                  {icon} {FOOD_CATEGORY_LABELS[key].th}
+                  {pending > 0 && (
+                    <span className="w-4 h-4 rounded-full text-xs flex items-center justify-center"
+                      style={{ backgroundColor: activeCat === key ? 'rgba(255,255,255,0.3)' : 'var(--bonnie-warm)', color: activeCat === key ? 'white' : 'var(--bonnie-rose)' }}>
+                      {pending}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="space-y-2.5">
+            {loading ? (
+              <div className="text-center py-12 text-sm" style={{ color: 'var(--bonnie-muted)' }}>กำลังโหลด...</div>
+            ) : categoryData.length === 0 ? (
+              <div className="text-center py-10 bg-white rounded-2xl border text-sm" style={{ borderColor: '#f9dde5', color: 'var(--bonnie-muted)' }}>ยังไม่มีการลงทะเบียน</div>
+            ) : categoryData.map(reg => (
+              <div key={reg.id} className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: '#f9dde5' }}>
+                <div className="px-4 py-3.5 flex items-center gap-3 cursor-pointer" onClick={() => setExpandedId(expandedId === reg.id ? null : reg.id)}>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs"
+                    style={{ backgroundColor: 'var(--bonnie-warm)', color: 'var(--bonnie-rose)' }}>
+                    #{reg.category_queue_number}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm" style={{ color: statusFg(reg.status) }}>{reg.name}</div>
+                    <div className="text-xs truncate" style={{ color: 'var(--bonnie-muted)' }}>{reg.account}{reg.food_quantity ? ` · ${reg.food_quantity}` : ''}</div>
+                  </div>
+                  <span className="text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0"
+                    style={{ backgroundColor: statusBg(reg.status), color: statusFg(reg.status) }}>
+                    {STATUS_LABELS[reg.status].th}
+                  </span>
+                  <span className="text-xs flex-shrink-0" style={{ color: 'var(--bonnie-muted)' }}>{expandedId === reg.id ? '▲' : '▼'}</span>
+                </div>
+                {expandedId === reg.id && (
+                  <div className="px-4 pb-4 border-t" style={{ borderColor: '#f9dde5' }}>
+                    <div className="grid grid-cols-2 gap-2 my-3 text-xs">
+                      {[
+                        { label: 'ชื่อ', value: reg.name },
+                        { label: 'แอคเคาท์', value: reg.account },
+                        { label: 'ประเภท', value: reg.registration_type === 'food_support' ? 'Food Support' : 'Food Truck' },
+                        reg.food_quantity ? { label: 'จำนวน', value: reg.food_quantity } : null,
+                        { label: 'สะดวกติดต่อกลับ', value: reg.convenience_choice === 'convenient' ? '✓ สะดวก' : '✗ ไม่สะดวก' },
+                        { label: 'ลงทะเบียนเมื่อ', value: new Date(reg.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) },
+                      ].filter(Boolean).map((item: any) => (
+                        <div key={item.label} className="p-2.5 rounded-xl" style={{ backgroundColor: 'var(--bonnie-cream)' }}>
+                          <div className="font-medium mb-0.5" style={{ color: 'var(--bonnie-muted)' }}>{item.label}</div>
+                          <div style={{ color: 'var(--bonnie-dark)' }}>{item.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="text-xs font-medium mb-2" style={{ color: 'var(--bonnie-muted)' }}>เปลี่ยนสถานะ</div>
+                    <div className="flex flex-wrap gap-2">
+                      {STATUSES.map(s => (
+                        <button key={s.value} onClick={() => updateStatus(reg.id, s.value)}
+                          disabled={updating === reg.id || reg.status === s.value}
+                          className="px-3 py-1.5 rounded-xl text-xs font-medium border-2 transition-all disabled:opacity-50"
+                          style={{ borderColor: reg.status === s.value ? s.color : 'transparent', backgroundColor: reg.status === s.value ? s.color + '20' : '#f9fafb', color: s.color }}>
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
