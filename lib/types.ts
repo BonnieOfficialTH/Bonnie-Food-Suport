@@ -3,20 +3,24 @@ export type RegistrationType = 'food_support' | 'food_truck'
 export type RegistrationStatus = 'pending' | 'sent' | 'unavailable' | 'contacting' | 'cancelled'
 export type ConvenienceChoice = 'convenient' | 'not_convenient'
 
-export interface Registration {
+export interface QueueItem {
   id: string
+  registration_id: string
   name: string
   account: string
-  food_allergies: string
-  registration_type: RegistrationType
-  food_category?: FoodCategory
+  food_category: FoodCategory
   food_quantity?: string
+  registration_type: RegistrationType
   convenience_choice: ConvenienceChoice
-  accepted_terms: boolean
   status: RegistrationStatus
-  queue_number: number
+  category_queue_number: number
   created_at: string
   updated_at: string
+}
+
+// Keep Registration for backward compat
+export interface Registration extends QueueItem {
+  queue_number: number
 }
 
 export const FOOD_CATEGORY_LABELS: Record<FoodCategory, { th: string; en: string }> = {

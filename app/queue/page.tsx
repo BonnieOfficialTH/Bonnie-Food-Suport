@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/lang-context'
-import { Registration, FoodCategory, FOOD_CATEGORY_LABELS, STATUS_LABELS } from '@/lib/types'
+import { QueueItem, FoodCategory, FOOD_CATEGORY_LABELS, STATUS_LABELS } from '@/lib/types'
 
 const CATEGORIES: { key: FoodCategory; icon: string }[] = [
   { key: 'savory', icon: '🍱' },
@@ -13,10 +13,20 @@ const CATEGORIES: { key: FoodCategory; icon: string }[] = [
   { key: 'food_truck', icon: '🚚' },
 ]
 
-function sortQueue(items: Registration[]): Registration[] {
-  const active = items.filter(i => ['pending','unavailable','contacting'].includes(i.status)).sort((a,b) => a.queue_number - b.queue_number)
-  const sent = items.filter(i => i.status === 'sent').sort((a,b) => a.queue_number - b.queue_number)
-  const cancelled = items.filter(i => i.status === 'cancelled').sort((a,b) => a.queue_number - b.queue_number)
+function censor(str: string): string {
+  if (!str) return ''
+  const prefix = str.startsWith('@') ? '@' : ''
+  const raw = prefix ? str.slice(1) : str
+  if (raw.length <= 4) return prefix + raw[0] + '***'
+  const start = Math.ceil(raw.length * 0.3)
+  const end = Math.floor(raw.length * 0.7)
+  return prefix + raw.slice(0, start) + '***' + raw.slice(end)
+}
+
+function sortQueue(items: QueueItem[]): QueueItem[] {
+  const active = items.filter(i => ['pending','unavailable','contacting'].includes(i.status)).sort((a,b) => a.category_queue_number - b.category_queue_number)
+  const sent = items.filter(i => i.status === 'sent').sort((a,b) => a.category_queue_number - b.category_queue_number)
+  const cancelled = items.filter(i => i.status === 'cancelled').sort((a,b) => a.category_queue_number - b.category_queue_number)
   return [...active, ...sent, ...cancelled]
 }
 
@@ -40,19 +50,19 @@ function statusBg(status: string) {
 export default function QueuePage() {
   const { lang } = useLang()
   const [activeTab, setActiveTab] = useState<FoodCategory>('savory')
-  const [data, setData] = useState<Registration[]>([])
+  const [data, setData] = useState<QueueItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchData()
     const ch = supabase.channel('queue-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'registrations' }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'queue_items' }, fetchData)
       .subscribe()
     return () => { supabase.removeChannel(ch) }
   }, [])
 
   async function fetchData() {
-    const { data: rows } = await supabase.from('registrations').select('*').order('queue_number')
+    const { data: rows } = await supabase.from('queue_items').select('*').order('category_queue_number')
     setData(rows || [])
     setLoading(false)
   }
@@ -87,13 +97,12 @@ export default function QueuePage() {
         ))}
       </div>
 
-      {/* Category tabs — scrollable on mobile */}
+      {/* Category tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2 mb-5" style={{ scrollbarWidth: 'none' }}>
         {CATEGORIES.map(({ key, icon }) => (
           <button key={key} onClick={() => setActiveTab(key)}
             className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${activeTab === key ? 'tab-active' : 'tab-inactive'}`}>
-            {icon}
-            <span>{FOOD_CATEGORY_LABELS[key][lang]}</span>
+            {icon} {FOOD_CATEGORY_LABELS[key][lang]}
             {pendingCount(key) > 0 && (
               <span className="w-4 h-4 rounded-full text-xs flex items-center justify-center"
                 style={{ backgroundColor: activeTab === key ? 'rgba(255,255,255,0.3)' : 'var(--bonnie-warm)', color: activeTab === key ? 'white' : 'var(--bonnie-rose)' }}>
@@ -119,14 +128,14 @@ export default function QueuePage() {
           <div key={reg.id} className="bg-white rounded-2xl px-4 py-3.5 border flex items-center gap-3" style={{ borderColor: '#f9dde5' }}>
             <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs"
               style={{ backgroundColor: 'var(--bonnie-warm)', color: 'var(--bonnie-rose)' }}>
-              #{reg.queue_number}
+              #{reg.category_queue_number}
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm truncate" style={{ color: statusColor(reg.status) }}>
-                {reg.name}
+                {censor(reg.name)}
               </div>
               <div className="text-xs truncate mt-0.5" style={{ color: 'var(--bonnie-muted)' }}>
-                {reg.account}{reg.food_quantity ? ` · ${reg.food_quantity}` : ''}
+                {censor(reg.account)}{reg.food_quantity ? ` · ${reg.food_quantity}` : ''}
               </div>
             </div>
             <span className="flex-shrink-0 text-xs px-2.5 py-1 rounded-full font-medium"
