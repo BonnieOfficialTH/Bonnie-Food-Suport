@@ -77,6 +77,7 @@ export default function RegisterPage() {
   const [foodLiked, setFoodLiked] = useState('')
   const [name, setName] = useState('')
   const [account, setAccount] = useState('')
+  const [platform, setPlatform] = useState<'X' | 'IG' | ''>('')
   const [regType, setRegType] = useState<RegType | ''>('')
   const [foodCats, setFoodCats] = useState<FoodCat[]>([])
   const [quantities, setQuantities] = useState<Record<FoodCat, string>>({ savory: '', dessert: '', drink: '', fruit: '' })
@@ -97,7 +98,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async () => {
     setError('')
-    if (!name || !account || !regType) { setError(t.errRequired); return }
+    if (!name || !platform || !account || !regType) { setError(t.errRequired); return }
     if (regType === 'food_support' && foodCats.length === 0) { setError(t.errCat); return }
     if (regType === 'food_support' && foodCats.some(c => !quantities[c])) { setError(t.errRequired); return }
     if (!convenience) { setError(t.errCond1); return }
@@ -110,7 +111,7 @@ export default function RegisterPage() {
 
       const insertData = categories.map(cat => ({
         registration_id: registrationId,
-        name, account,
+        name, account: `[${platform}] @${account}`.replace('@@','@'),
         food_category: cat,
         food_quantity: cat === 'food_truck' ? null : quantities[cat as FoodCat],
         registration_type: regType,
@@ -176,7 +177,7 @@ export default function RegisterPage() {
         <div className="flex gap-3 justify-center flex-wrap">
           <Link href="/queue" className="px-5 py-2.5 rounded-full text-white text-sm"
             style={{ background: 'linear-gradient(135deg, var(--bonnie-lavender), var(--bonnie-rose))' }}>{t.viewQueue}</Link>
-          <button onClick={() => { setSuccess(null); setName(''); setAccount(''); setRegType(''); setFoodCats([]); setQuantities({ savory: '', dessert: '', drink: '', fruit: '' }); setConvenience(''); setAcceptedTerms(false) }}
+          <button onClick={() => { setSuccess(null); setName(''); setAccount(''); setRegType(''); setFoodCats([]); setQuantities({ savory: '', dessert: '', drink: '', fruit: '' }); setConvenience(''); setAcceptedTerms(false); setPlatform('') }}
             className="px-5 py-2.5 rounded-full text-sm border"
             style={{ borderColor: 'var(--bonnie-pink)', color: 'var(--bonnie-rose)', backgroundColor: 'white' }}>{t.registerAnother}</button>
         </div>
@@ -213,7 +214,29 @@ export default function RegisterPage() {
           </div>
           <div>
             <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--bonnie-muted)' }}>{t.accountLabel} *</label>
-            <input value={account} onChange={e => setAccount(e.target.value)} placeholder={t.accountPlaceholder} className={inp} style={inpStyle} />
+            <div className="flex gap-2 mb-2">
+              {(['X', 'IG'] as const).map(p => (
+                <button key={p} type="button" onClick={() => { setPlatform(p); setAccount('') }}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold border-2 transition-all"
+                  style={platform === p
+                    ? { background: 'linear-gradient(135deg, var(--bonnie-lavender), var(--bonnie-rose))', color: 'white', borderColor: 'var(--bonnie-rose)' }
+                    : { backgroundColor: 'white', color: 'var(--bonnie-muted)', borderColor: '#E9D5FF' }}>
+                  {p === 'X' ? '𝕏 X (Twitter)' : '📸 Instagram'}
+                </button>
+              ))}
+            </div>
+            {platform && (
+              <div className="flex items-center border rounded-xl overflow-hidden" style={{ borderColor: '#E9D5FF' }}>
+                <span className="px-3 py-3 text-xs font-semibold border-r flex-shrink-0"
+                  style={{ backgroundColor: 'var(--bonnie-warm)', color: 'var(--bonnie-muted)', borderColor: '#E9D5FF' }}>
+                  {platform === 'X' ? '𝕏' : 'IG'} @
+                </span>
+                <input value={account} onChange={e => setAccount(e.target.value)}
+                  placeholder={platform === 'X' ? 'bonnieofficial_' : 'bonnieofficialth'}
+                  className="flex-1 px-3 py-3 text-sm bg-white outline-none"
+                  style={{ color: 'var(--bonnie-dark)' }} />
+              </div>
+            )}
           </div>
         </div>
 
