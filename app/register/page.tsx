@@ -119,11 +119,25 @@ export default function RegisterPage() {
         status: 'pending',
       }))
 
-      // Insert each category and get queue numbers
+      // Insert each category — queue number auto-assigned by DB trigger
       const results: { category: string; queueNum: number }[] = []
       for (const item of insertData) {
-        const { data: qNum } = await supabase.rpc('get_next_category_queue', { cat: item.food_category })
-        const { data, error: err } = await supabase.from('queue_items').insert([{ ...item, category_queue_number: qNum }]).select('category_queue_number, food_category').single()
+        // Get current max for this category and increment
+        const { data: maxRow } = await supabase
+          .from('queue_items')
+          .select('category_queue_number')
+          .eq('food_category', item.food_category)
+          .order('category_queue_number', { ascending: false })
+          .limit(1)
+          .single()
+        
+        const nextNum = maxRow ? maxRow.category_queue_number + 1 : 1
+        
+        const { data, error: err } = await supabase
+          .from('queue_items')
+          .insert([{ ...item, category_queue_number: nextNum }])
+          .select('category_queue_number, food_category')
+          .single()
         if (err) throw err
         results.push({ category: data.food_category, queueNum: data.category_queue_number })
       }
