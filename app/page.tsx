@@ -18,10 +18,10 @@ export default function HomePage() {
       <div className="text-center mb-8">
         <h1 className="text-3xl md:text-4xl font-bold mb-3"
           style={{ fontFamily: 'Georgia, serif', color: 'var(--bonnie-dark)' }}>
-          Food Support
+          BONNIE'S FOOD BOOSTER
         </h1>
         <p className="text-sm" style={{ color: 'var(--bonnie-muted)' }}>
-          {lang === 'th' ? '💜 ก่อนลงทะเบียนรบกวนอ่านรายละเอียดและข้อตกลงก่อนนะคะ' : 'Please read the details and terms & conditions before registering.'}
+          {lang === 'th' ? '💜 ก่อนลงทะเบียนรบกวนอ่านรายละเอียดและข้อตกลงก่อนนะคะ' : '💜 Please read the details and terms & conditions before registering.'}
         </p>
       </div>
 

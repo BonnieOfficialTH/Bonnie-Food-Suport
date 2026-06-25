@@ -23,13 +23,7 @@ function Header() {
         {/* Top row */}
         <div className="flex items-center justify-between py-3 gap-2">
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
-              style={{ background: 'linear-gradient(135deg, var(--bonnie-pink), var(--bonnie-rose))' }}>
-              B
-            </div>
-            <span className="font-bold text-base leading-tight" style={{ color: 'var(--bonnie-dark)', fontFamily: 'Georgia, serif' }}>
-              Bonnie <span className="font-normal text-sm" style={{ color: 'var(--bonnie-muted)' }}>Food Support</span>
-            </span>
+            <img src="/logo.png" alt="Bonnie Official TH" className="h-9 w-auto object-contain" style={{ maxWidth: 120 }} />
           </Link>
 
           {/* Right side: social + lang */}
