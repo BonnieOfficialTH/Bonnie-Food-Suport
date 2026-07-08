@@ -1,6 +1,6 @@
 export type FoodCategory = 'savory' | 'dessert' | 'drink' | 'fruit' | 'food_truck'
 export type RegistrationType = 'food_support' | 'food_truck'
-export type RegistrationStatus = 'pending' | 'sent' | 'unavailable' | 'contacting' | 'cancelled'
+export type RegistrationStatus = 'pending' | 'sent' | 'unavailable' | 'contacting' | 'cancelled' | 'cycling'
 export type ConvenienceChoice = 'convenient' | 'not_convenient'
 
 export interface QueueItem {
@@ -37,4 +37,5 @@ export const STATUS_LABELS: Record<RegistrationStatus, { th: string; en: string 
   unavailable: { th: 'ไม่สะดวกส่งในรอบ', en: 'Unavailable This Round' },
   contacting: { th: 'ระหว่างการติดต่อ', en: 'Contacting' },
   cancelled: { th: 'ยกเลิกคิว', en: 'Cancelled' },
+  cycling: { th: 'ส่งแล้ว วนคิวส่งใหม่', en: 'Sent - Requeued' },
 }

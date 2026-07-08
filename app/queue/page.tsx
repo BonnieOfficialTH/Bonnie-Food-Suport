@@ -45,6 +45,7 @@ function sortQueue(items: QueueItem[]): QueueItem[] {
 function getDisplayNumber(item: QueueItem, sortedList: QueueItem[]): number | null {
   const activeStatuses = ['contacting', 'pending', 'unavailable']
   if (!activeStatuses.includes(item.status)) return null
+  // cycling items have no display number
   const activeOnly = sortedList.filter(i => activeStatuses.includes(i.status))
   return activeOnly.findIndex(i => i.id === item.id) + 1
 }
@@ -52,6 +53,7 @@ function getDisplayNumber(item: QueueItem, sortedList: QueueItem[]): number | nu
 function statusColor(status: string) {
   switch(status) {
     case 'sent': return '#16a34a'
+    case 'cycling': return '#059669'
     case 'contacting': return '#2563eb'
     case 'cancelled': return '#dc2626'
     default: return 'var(--bonnie-dark)'
@@ -60,6 +62,7 @@ function statusColor(status: string) {
 function statusBg(status: string) {
   switch(status) {
     case 'sent': return '#dcfce7'
+    case 'cycling': return '#d1fae5'
     case 'contacting': return '#dbeafe'
     case 'cancelled': return '#fee2e2'
     default: return 'var(--bonnie-warm)'
@@ -104,6 +107,7 @@ export default function QueuePage() {
           { s: 'contacting', color: '#2563eb', label: { th: 'ระหว่างติดต่อ', en: 'Contacting' } },
           { s: 'pending', color: 'var(--bonnie-dark)', label: { th: 'รอดำเนินการ', en: 'Pending' } },
           { s: 'unavailable', color: '#92400e', label: { th: 'ไม่สะดวกในรอบ', en: 'Unavailable' } },
+          { s: 'cycling', color: '#059669', label: { th: 'วนคิวส่งใหม่', en: 'Requeued' } },
           { s: 'sent', color: '#16a34a', label: { th: 'ส่งแล้ว', en: 'Sent' } },
           { s: 'cancelled', color: '#dc2626', label: { th: 'ยกเลิก', en: 'Cancelled' } },
         ].map(x => (
@@ -158,7 +162,9 @@ export default function QueuePage() {
             </div>
             <span className="flex-shrink-0 text-xs px-2.5 py-1 rounded-full font-medium"
               style={{ backgroundColor: statusBg(reg.status), color: statusColor(reg.status) }}>
-              {STATUS_LABELS[reg.status][lang]}
+              {reg.status === 'cycling' && (reg as any).cycle_count
+                ? `${STATUS_LABELS[reg.status][lang]} รอบที่ ${(reg as any).cycle_count}`
+                : STATUS_LABELS[reg.status][lang]}
             </span>
           </div>
         ))}

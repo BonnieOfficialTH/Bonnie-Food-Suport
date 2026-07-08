@@ -6,12 +6,17 @@ import { supabase } from '@/lib/supabase'
 
 export default function HomePage() {
   const { lang } = useLang()
-  const [rules, setRules] = useState('')
+  const [rulesTh, setRulesTh] = useState('')
+  const [rulesEn, setRulesEn] = useState('')
 
   useEffect(() => {
-    supabase.from('settings').select('value').eq('key', 'house_rules').single()
-      .then(({ data }) => { if (data?.value) setRules(data.value) })
+    supabase.from('settings').select('value').eq('key', 'house_rules_th').single()
+      .then(({ data }) => { if (data?.value) setRulesTh(data.value) })
+    supabase.from('settings').select('value').eq('key', 'house_rules_en').single()
+      .then(({ data }) => { if (data?.value) setRulesEn(data.value) })
   }, [])
+
+  const rules = lang === 'th' ? rulesTh : rulesEn
 
   return (
     <div>

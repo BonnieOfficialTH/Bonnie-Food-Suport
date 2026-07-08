@@ -27,7 +27,7 @@ const STATUSES: { value: RegistrationStatus; label: string; color: string }[] = 
 const TIMEOUT_MS = 10 * 60 * 1000 // 10 minutes
 
 function sortQueue(items: QueueItem[]): QueueItem[] {
-  const statusOrder = { contacting: 0, pending: 1, unavailable: 2, sent: 3, cancelled: 4 }
+  const statusOrder = { contacting: 0, pending: 1, unavailable: 2, cycling: 3, sent: 4, cancelled: 5 }
   const lastUnavailableTime = Math.max(
     0,
     ...items.filter(i => i.status === 'unavailable').map(i => new Date(i.updated_at).getTime())
@@ -56,10 +56,10 @@ function getDisplayNumber(item: QueueItem, sortedList: QueueItem[]): number | nu
 }
 
 function statusFg(s: RegistrationStatus) {
-  switch(s) { case 'sent': return '#16a34a'; case 'contacting': return '#2563eb'; case 'cancelled': return '#dc2626'; case 'unavailable': return '#92400e'; default: return 'var(--bonnie-dark)' }
+  switch(s) { case 'sent': return '#16a34a'; case 'cycling': return '#059669'; case 'contacting': return '#2563eb'; case 'cancelled': return '#dc2626'; case 'unavailable': return '#92400e'; default: return 'var(--bonnie-dark)' }
 }
 function statusBg(s: RegistrationStatus) {
-  switch(s) { case 'sent': return '#dcfce7'; case 'contacting': return '#dbeafe'; case 'cancelled': return '#fee2e2'; case 'unavailable': return '#fef3c7'; default: return 'var(--bonnie-warm)' }
+  switch(s) { case 'sent': return '#dcfce7'; case 'cycling': return '#d1fae5'; case 'contacting': return '#dbeafe'; case 'cancelled': return '#fee2e2'; case 'unavailable': return '#fef3c7'; default: return 'var(--bonnie-warm)' }
 }
 
 function EditableSection({ title, emoji, settingKey, placeholder, rows = 4, onAction }: {
@@ -204,6 +204,45 @@ export default function AdminDashboard() {
     setDeleting(false)
   }
 
+  async function cycleQueue(reg: QueueItem) {
+    // Mark current as cycling
+    const cycleCount = (reg as any).cycle_count ? (reg as any).cycle_count + 1 : 1
+    await supabase.from('queue_items').update({
+      status: 'cycling',
+      cycle_count: cycleCount,
+      updated_at: new Date().toISOString()
+    }).eq('id', reg.id)
+
+    // Get next queue number for this category
+    const { data: maxRow } = await supabase
+      .from('queue_items')
+      .select('category_queue_number')
+      .eq('food_category', reg.food_category)
+      .order('category_queue_number', { ascending: false })
+      .limit(1)
+      .single()
+
+    const nextNum = maxRow ? maxRow.category_queue_number + 1 : 1
+
+    // Create new queue item
+    await supabase.from('queue_items').insert([{
+      registration_id: reg.registration_id,
+      name: reg.name,
+      account: reg.account,
+      food_category: reg.food_category,
+      food_quantity: reg.food_quantity,
+      registration_type: reg.registration_type,
+      convenience_choice: reg.convenience_choice,
+      status: 'pending',
+      category_queue_number: nextNum,
+      cycle_count: 0,
+      cycle_round: cycleCount,
+    }])
+
+    await fetchData()
+    resetTimer()
+  }
+
   async function updateStatus(id: string, status: RegistrationStatus) {
     setUpdating(id)
     await supabase.from('queue_items').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
@@ -317,7 +356,10 @@ export default function AdminDashboard() {
 
       {/* Tab: กติกา */}
       {activeTab === 'rules' && (
-        <EditableSection title="BONNIE'S FOOD BOOSTER Detail and Agreement" emoji="📋" settingKey="house_rules" placeholder="พิมพ์กติกาและรายละเอียดที่นี่..." rows={10} onAction={resetTimer} />
+        <div>
+          <EditableSection title="รายละเอียด (ภาษาไทย)" emoji="🇹🇭" settingKey="house_rules_th" placeholder="พิมพ์กติกาภาษาไทยที่นี่..." rows={8} onAction={resetTimer} />
+          <EditableSection title="Details (English)" emoji="🇬🇧" settingKey="house_rules_en" placeholder="Enter rules in English here..." rows={8} onAction={resetTimer} />
+        </div>
       )}
 
       {/* Tab: หมายเหตุ */}
@@ -404,7 +446,16 @@ export default function AdminDashboard() {
                         </button>
                       ))}
                     </div>
-                    <div className="mt-3 pt-3 border-t" style={{ borderColor: '#F3E8FF' }}>
+                    <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: '#F3E8FF' }}>
+                      <div className="flex gap-2">
+                        {reg.status === 'sent' && (
+                          <button onClick={() => cycleQueue(reg)}
+                            className="text-xs px-3 py-1.5 rounded-xl border font-medium"
+                            style={{ borderColor: '#6ee7b7', color: '#059669', backgroundColor: '#f0fdf4' }}>
+                            🔄 วนคิว
+                          </button>
+                        )}
+                      </div>
                       <button onClick={() => { setDeleteId(reg.id); setDeletePassword(''); setDeleteError('') }}
                         className="text-xs px-3 py-1.5 rounded-xl border font-medium"
                         style={{ borderColor: '#fca5a5', color: '#dc2626', backgroundColor: '#fef2f2' }}>
