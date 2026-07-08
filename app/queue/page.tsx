@@ -157,14 +157,16 @@ export default function QueuePage() {
               </div>
               <div className="text-xs mt-0.5 flex flex-wrap gap-x-2" style={{ color: 'var(--bonnie-muted)' }}>
                 {reg.food_quantity && <span>{reg.food_quantity}</span>}
-                <span>{new Date(reg.status === 'pending' ? reg.created_at : reg.updated_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                <span>
+                  {new Date(reg.status === 'pending' ? reg.created_at : reg.updated_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
+                  {reg.status === 'pending' && (reg as any).cycle_round > 0 && ` · วนคิวส่งใหม่รอบที่ ${(reg as any).cycle_round}`}
+                  {reg.status === 'cycling' && ` · วนคิวส่งใหม่รอบที่ ${(reg as any).cycle_count || 1}`}
+                </span>
               </div>
             </div>
             <span className="flex-shrink-0 text-xs px-2.5 py-1 rounded-full font-medium"
               style={{ backgroundColor: statusBg(reg.status), color: statusColor(reg.status) }}>
-              {reg.status === 'cycling' && (reg as any).cycle_count
-                ? `${STATUS_LABELS[reg.status][lang]} รอบที่ ${(reg as any).cycle_count}`
-                : STATUS_LABELS[reg.status][lang]}
+              {STATUS_LABELS[reg.status][lang]}
             </span>
           </div>
         ))}

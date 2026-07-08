@@ -125,6 +125,7 @@ export default function AdminDashboard() {
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteError, setDeleteError] = useState('')
   const [deleting, setDeleting] = useState(false)
+  const [pendingStatus, setPendingStatus] = useState<{id: string; status: RegistrationStatus} | null>(null)
   const [timeoutWarning, setTimeoutWarning] = useState(false)
   const [remainingSeconds, setRemainingSeconds] = useState(0)
   const router = useRouter()
@@ -243,11 +244,18 @@ export default function AdminDashboard() {
     resetTimer()
   }
 
-  async function updateStatus(id: string, status: RegistrationStatus) {
-    setUpdating(id)
-    await supabase.from('queue_items').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
-    await fetchData(); setUpdating(null)
+  async function confirmStatus() {
+    if (!pendingStatus) return
+    setUpdating(pendingStatus.id)
+    await supabase.from('queue_items').update({ status: pendingStatus.status, updated_at: new Date().toISOString() }).eq('id', pendingStatus.id)
+    setPendingStatus(null)
+    await fetchData()
+    setUpdating(null)
     resetTimer()
+  }
+
+  async function updateStatus(id: string, status: RegistrationStatus) {
+    setPendingStatus({ id, status })
   }
 
   const categoryData = sortQueue(data.filter(r => r.food_category === activeCat))
@@ -260,6 +268,40 @@ export default function AdminDashboard() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
+
+      {/* Confirm status change modal */}
+      {pendingStatus && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm border" style={{ borderColor: '#E9D5FF' }}>
+            <h3 className="font-bold text-base mb-1" style={{ fontFamily: 'Georgia, serif', color: 'var(--bonnie-dark)' }}>
+              ยืนยันการเปลี่ยนสถานะ
+            </h3>
+            <p className="text-sm mb-1" style={{ color: 'var(--bonnie-muted)' }}>
+              เปลี่ยนเป็น
+            </p>
+            <div className="px-4 py-2.5 rounded-xl text-sm font-semibold mb-5 text-center"
+              style={{
+                backgroundColor: pendingStatus.status === 'sent' ? '#dcfce7' : pendingStatus.status === 'contacting' ? '#dbeafe' : pendingStatus.status === 'cancelled' ? '#fee2e2' : pendingStatus.status === 'unavailable' ? '#fef3c7' : 'var(--bonnie-warm)',
+                color: pendingStatus.status === 'sent' ? '#16a34a' : pendingStatus.status === 'contacting' ? '#2563eb' : pendingStatus.status === 'cancelled' ? '#dc2626' : pendingStatus.status === 'unavailable' ? '#92400e' : 'var(--bonnie-muted)',
+              }}>
+              {STATUS_LABELS[pendingStatus.status].th}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setPendingStatus(null)}
+                className="flex-1 py-2.5 rounded-xl text-sm border"
+                style={{ borderColor: '#E9D5FF', color: 'var(--bonnie-muted)', backgroundColor: 'white' }}>
+                ยกเลิก
+              </button>
+              <button onClick={confirmStatus} disabled={!!updating}
+                className="flex-1 py-2.5 rounded-xl text-sm text-white font-medium disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, var(--bonnie-lavender), var(--bonnie-rose))' }}>
+                {updating ? 'กำลังบันทึก...' : '✓ บันทึก'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete confirmation modal */}
       {deleteId && (
@@ -408,8 +450,8 @@ export default function AdminDashboard() {
                     <div className="text-xs truncate" style={{ color: 'var(--bonnie-muted)' }}>{reg.account}{reg.food_quantity ? ` · ${reg.food_quantity}` : ''}</div>
                     <div className="text-xs mt-0.5" style={{ color: '#b0919a' }}>
                       {reg.status === 'pending'
-                        ? `ลงทะเบียน ${new Date(reg.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}`
-                        : `อัปเดต ${new Date(reg.updated_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}`}
+                        ? `ลงทะเบียน ${new Date(reg.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}${(reg as any).cycle_round > 0 ? ` · วนคิวส่งใหม่รอบที่ ${(reg as any).cycle_round}` : ''}`
+                        : `อัปเดต ${new Date(reg.updated_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}${reg.status === 'cycling' ? ` · วนคิวส่งใหม่รอบที่ ${(reg as any).cycle_count || 1}` : ''}`}
                     </div>
                   </div>
                   <span className="text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0"
