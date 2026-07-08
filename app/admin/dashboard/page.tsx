@@ -226,7 +226,7 @@ export default function AdminDashboard() {
     setDeleting(false)
   }
 
-  async function cycleQueue(reg: QueueItem) {
+  async function cycleQueue(reg: any, round?: number) {
     // Mark current as cycling
     // First cycle = round 2 (already sent round 1)
     const cycleCount = (reg as any).cycle_count ? (reg as any).cycle_count + 1 : 2
