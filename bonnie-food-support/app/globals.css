@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bonnie-pink: #FBCFE8;
+  --bonnie-rose: #A855F7;
+  --bonnie-cream: #FAF5FF;
+  --bonnie-warm: #F3E8FF;
+  --bonnie-dark: #09090B;
+  --bonnie-muted: #6B21A8;
+  --bonnie-blue: #BAE6FD;
+  --bonnie-lavender: #D8B4FE;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: var(--bonnie-cream);
+  color: var(--bonnie-dark);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+input, select, textarea {
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--bonnie-rose) !important;
+  box-shadow: 0 0 0 3px rgba(168,85,247,0.15);
+}
+
+.tab-active {
+  background: linear-gradient(135deg, var(--bonnie-lavender), var(--bonnie-rose));
+  color: white;
+}
+.tab-inactive {
+  background: white;
+  color: var(--bonnie-muted);
+  border: 1.5px solid #f3c6d0;
+}
+
+.status-sent    { color: #16a34a; }
+.status-contacting { color: #2563eb; }
+.status-cancelled  { color: #dc2626; }
+.status-pending, .status-unavailable { color: var(--bonnie-dark); }
+
+@media (max-width: 640px) {
+  .hide-mobile { display: none !important; }
+}
+
+.rich-content b, .rich-content strong { font-weight: 700; }
+.rich-content i, .rich-content em { font-style: italic; }
+.rich-content u { text-decoration: underline; }
