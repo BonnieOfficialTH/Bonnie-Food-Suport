@@ -125,7 +125,7 @@ export default function AdminDashboard() {
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteError, setDeleteError] = useState('')
   const [deleting, setDeleting] = useState(false)
-  const [pendingStatus, setPendingStatus] = useState<{id: string; status: RegistrationStatus} | null>(null)
+  const [pendingStatus, setPendingStatus] = useState<{id: string; status: RegistrationStatus; reg?: any} | null>(null)
   const [timeoutWarning, setTimeoutWarning] = useState(false)
   const [remainingSeconds, setRemainingSeconds] = useState(0)
   const router = useRouter()
@@ -207,7 +207,8 @@ export default function AdminDashboard() {
 
   async function cycleQueue(reg: QueueItem) {
     // Mark current as cycling
-    const cycleCount = (reg as any).cycle_count ? (reg as any).cycle_count + 1 : 1
+    // First cycle = round 2 (already sent round 1)
+    const cycleCount = (reg as any).cycle_count ? (reg as any).cycle_count + 1 : 2
     await supabase.from('queue_items').update({
       status: 'cycling',
       cycle_count: cycleCount,
@@ -237,7 +238,7 @@ export default function AdminDashboard() {
       status: 'pending',
       category_queue_number: nextNum,
       cycle_count: 0,
-      cycle_round: cycleCount,
+      cycle_round: cycleCount, // This item is being sent for round cycleCount
     }])
 
     await fetchData()
@@ -247,9 +248,13 @@ export default function AdminDashboard() {
   async function confirmStatus() {
     if (!pendingStatus) return
     setUpdating(pendingStatus.id)
-    await supabase.from('queue_items').update({ status: pendingStatus.status, updated_at: new Date().toISOString() }).eq('id', pendingStatus.id)
+    if (pendingStatus.status === 'cycling' as RegistrationStatus && pendingStatus.reg) {
+      await cycleQueue(pendingStatus.reg)
+    } else {
+      await supabase.from('queue_items').update({ status: pendingStatus.status, updated_at: new Date().toISOString() }).eq('id', pendingStatus.id)
+      await fetchData()
+    }
     setPendingStatus(null)
-    await fetchData()
     setUpdating(null)
     resetTimer()
   }
@@ -278,14 +283,16 @@ export default function AdminDashboard() {
               ยืนยันการเปลี่ยนสถานะ
             </h3>
             <p className="text-sm mb-1" style={{ color: 'var(--bonnie-muted)' }}>
-              เปลี่ยนเป็น
+              {pendingStatus.status === 'cycling' ? 'วนคิวส่งใหม่' : 'เปลี่ยนเป็น'}
             </p>
             <div className="px-4 py-2.5 rounded-xl text-sm font-semibold mb-5 text-center"
               style={{
-                backgroundColor: pendingStatus.status === 'sent' ? '#dcfce7' : pendingStatus.status === 'contacting' ? '#dbeafe' : pendingStatus.status === 'cancelled' ? '#fee2e2' : pendingStatus.status === 'unavailable' ? '#fef3c7' : 'var(--bonnie-warm)',
-                color: pendingStatus.status === 'sent' ? '#16a34a' : pendingStatus.status === 'contacting' ? '#2563eb' : pendingStatus.status === 'cancelled' ? '#dc2626' : pendingStatus.status === 'unavailable' ? '#92400e' : 'var(--bonnie-muted)',
+                backgroundColor: pendingStatus.status === 'cycling' ? '#d1fae5' : pendingStatus.status === 'sent' ? '#dcfce7' : pendingStatus.status === 'contacting' ? '#dbeafe' : pendingStatus.status === 'cancelled' ? '#fee2e2' : pendingStatus.status === 'unavailable' ? '#fef3c7' : 'var(--bonnie-warm)',
+                color: pendingStatus.status === 'cycling' ? '#059669' : pendingStatus.status === 'sent' ? '#16a34a' : pendingStatus.status === 'contacting' ? '#2563eb' : pendingStatus.status === 'cancelled' ? '#dc2626' : pendingStatus.status === 'unavailable' ? '#92400e' : 'var(--bonnie-muted)',
               }}>
-              {STATUS_LABELS[pendingStatus.status].th}
+              {pendingStatus.status === 'cycling'
+                ? `ส่งแล้ว วนคิวส่งใหม่รอบที่ ${((pendingStatus.reg?.cycle_count || 0)) + 2 > 2 ? pendingStatus.reg?.cycle_count + 1 : 2}`
+                : STATUS_LABELS[pendingStatus.status]?.th}
             </div>
             <div className="flex gap-2">
               <button onClick={() => setPendingStatus(null)}
@@ -449,9 +456,13 @@ export default function AdminDashboard() {
                     <div className="font-semibold text-sm" style={{ color: statusFg(reg.status) }}>{reg.name}</div>
                     <div className="text-xs truncate" style={{ color: 'var(--bonnie-muted)' }}>{reg.account}{reg.food_quantity ? ` · ${reg.food_quantity}` : ''}</div>
                     <div className="text-xs mt-0.5" style={{ color: '#b0919a' }}>
-                      {reg.status === 'pending'
-                        ? `ลงทะเบียน ${new Date(reg.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}${(reg as any).cycle_round > 0 ? ` · วนคิวส่งใหม่รอบที่ ${(reg as any).cycle_round}` : ''}`
-                        : `อัปเดต ${new Date(reg.updated_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}${reg.status === 'cycling' ? ` · วนคิวส่งใหม่รอบที่ ${(reg as any).cycle_count || 1}` : ''}`}
+                      {reg.status === 'pending' && (reg as any).cycle_round > 0
+                        ? `ลงทะเบียน ${new Date(reg.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })} · วนคิวส่งใหม่รอบที่ ${(reg as any).cycle_round}`
+                        : reg.status === 'cycling'
+                        ? `อัปเดต ${new Date(reg.updated_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })} · ส่งแล้ว วนคิวส่งใหม่รอบที่ ${(reg as any).cycle_count || 2}`
+                        : reg.status === 'pending'
+                        ? `ลงทะเบียน ${new Date(reg.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}`
+                        : `อัปเดต ${new Date(reg.updated_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}`}
                     </div>
                   </div>
                   <span className="text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0"
@@ -478,6 +489,17 @@ export default function AdminDashboard() {
                       ))}
                     </div>
                     <div className="text-xs font-medium mb-2" style={{ color: 'var(--bonnie-muted)' }}>เปลี่ยนสถานะ</div>
+                    {/* Cycle button FIRST if status is sent */}
+                    {reg.status === 'sent' && (
+                      <div className="mb-3 p-3 rounded-xl border" style={{ borderColor: '#6ee7b7', backgroundColor: '#f0fdf4' }}>
+                        <div className="text-xs font-medium mb-2" style={{ color: '#059669' }}>🔄 วนคิวส่งใหม่</div>
+                        <button onClick={() => setPendingStatus({ id: reg.id, status: 'cycling' as RegistrationStatus, reg })}
+                          className="text-xs px-4 py-2 rounded-xl font-semibold text-white"
+                          style={{ backgroundColor: '#059669' }}>
+                          วนคิวส่งใหม่รอบที่ {((reg as any).cycle_count || 0) + 2 > 2 ? (reg as any).cycle_count + 1 : 2}
+                        </button>
+                      </div>
+                    )}
                     <div className="flex flex-wrap gap-2">
                       {STATUSES.map(s => (
                         <button key={s.value} onClick={() => updateStatus(reg.id, s.value)}
@@ -488,16 +510,7 @@ export default function AdminDashboard() {
                         </button>
                       ))}
                     </div>
-                    <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: '#F3E8FF' }}>
-                      <div className="flex gap-2">
-                        {reg.status === 'sent' && (
-                          <button onClick={() => cycleQueue(reg)}
-                            className="text-xs px-3 py-1.5 rounded-xl border font-medium"
-                            style={{ borderColor: '#6ee7b7', color: '#059669', backgroundColor: '#f0fdf4' }}>
-                            🔄 วนคิว
-                          </button>
-                        )}
-                      </div>
+                    <div className="mt-3 pt-3 border-t flex justify-end" style={{ borderColor: '#F3E8FF' }}>
                       <button onClick={() => { setDeleteId(reg.id); setDeletePassword(''); setDeleteError('') }}
                         className="text-xs px-3 py-1.5 rounded-xl border font-medium"
                         style={{ borderColor: '#fca5a5', color: '#dc2626', backgroundColor: '#fef2f2' }}>
