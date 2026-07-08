@@ -534,8 +534,8 @@ export default function AdminDashboard() {
                     const thTime = new Date(reg.status === 'pending' ? reg.created_at : reg.updated_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
                     const cycleRound = (reg as any).cycle_round || 0
                     const cycleCount = (reg as any).cycle_count || 0
-                    if (reg.status === 'pending' && cycleRound > 0) return `${thTime} · วนคิวส่งใหม่รอบที่ ${cycleRound}`
-                    if (reg.status === 'cycling') return `${thTime} · ส่งแล้ว วนคิวส่งใหม่รอบที่ ${cycleCount}`
+                    if (cycleRound > 0) return `${thTime} · วนคิวส่งใหม่รอบที่ ${cycleRound}`
+                    if (cycleCount > 0) return `${thTime} · ส่งแล้ว วนคิวส่งใหม่รอบที่ ${cycleCount}`
                     return thTime
                   })()}
                     </div>

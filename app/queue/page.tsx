@@ -27,8 +27,8 @@ function sortQueue(items: QueueItem[]): QueueItem[] {
   // Split into groups
   const contacting = items.filter(i => i.status === 'contacting').sort((a,b) => a.category_queue_number - b.category_queue_number)
   const unavailable = items.filter(i => i.status === 'unavailable').sort((a,b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime())
-  const sent = items.filter(i => i.status === 'sent').sort((a,b) => a.category_queue_number - b.category_queue_number)
-  const cancelled = items.filter(i => i.status === 'cancelled').sort((a,b) => a.category_queue_number - b.category_queue_number)
+  const sent = items.filter(i => i.status === 'sent').sort((a,b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+  const cancelled = items.filter(i => i.status === 'cancelled').sort((a,b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
 
   // For pending: split into "before unavailable" and "after unavailable"
   // based on whether they registered before or after any unavailable was marked
@@ -159,8 +159,8 @@ export default function QueuePage() {
                 {reg.food_quantity && <span>{reg.food_quantity}</span>}
                 <span>
                   {new Date(reg.status === 'pending' ? reg.created_at : reg.updated_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
-                  {reg.status === 'pending' && (reg as any).cycle_round > 0 && ` · วนคิวส่งใหม่รอบที่ ${(reg as any).cycle_round}`}
-                  {reg.status === 'cycling' && ` · วนคิวส่งใหม่รอบที่ ${(reg as any).cycle_count || 1}`}
+                  {(reg as any).cycle_round > 0 && ` · ${lang === 'en' ? `Round ${(reg as any).cycle_round}` : `วนคิวส่งใหม่รอบที่ ${(reg as any).cycle_round}`}`}
+                  {reg.status === 'cycling' && (reg as any).cycle_count > 0 && ` · ${lang === 'en' ? `Round ${(reg as any).cycle_count}` : `วนคิวส่งใหม่รอบที่ ${(reg as any).cycle_count}`}`}
                 </span>
               </div>
             </div>
