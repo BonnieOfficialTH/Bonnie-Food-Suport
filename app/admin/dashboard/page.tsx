@@ -125,7 +125,11 @@ export default function AdminDashboard() {
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteError, setDeleteError] = useState('')
   const [deleting, setDeleting] = useState(false)
-  const [pendingStatus, setPendingStatus] = useState<{id: string; status: RegistrationStatus; reg?: any; withCycle?: boolean} | null>(null)
+  const [pendingStatus, setPendingStatus] = useState<{id: string; status: RegistrationStatus; reg?: any; withCycle?: boolean; cycleRound?: string} | null>(null)
+  const [unlockId, setUnlockId] = useState<string | null>(null)
+  const [unlockPassword, setUnlockPassword] = useState('')
+  const [unlockError, setUnlockError] = useState('')
+  const [unlocking, setUnlocking] = useState(false)
   const [timeoutWarning, setTimeoutWarning] = useState(false)
   const [remainingSeconds, setRemainingSeconds] = useState(0)
   const router = useRouter()
@@ -186,6 +190,23 @@ export default function AdminDashboard() {
     const { data: rows } = await supabase.from('queue_items').select('*').order('category_queue_number')
     setData(rows || []); setLoading(false)
   }
+  async function unlockAndEdit() {
+    if (!unlockId) return
+    setUnlocking(true)
+    setUnlockError('')
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user?.email) { setUnlockError('ไม่พบ session'); setUnlocking(false); return }
+    const { error } = await supabase.auth.signInWithPassword({ email: session.user.email, password: unlockPassword })
+    if (error) { setUnlockError('รหัสผ่านไม่ถูกต้อง'); setUnlocking(false); return }
+    // Find the reg and open pendingStatus for it
+    const reg = data.find(r => r.id === unlockId)
+    setUnlockId(null)
+    setUnlockPassword('')
+    setUnlockError('')
+    setUnlocking(false)
+    if (reg) setPendingStatus({ id: unlockId!, status: reg.status, reg })
+  }
+
   async function deleteItem() {
     if (!deleteId) return
     setDeleting(true)
@@ -238,7 +259,7 @@ export default function AdminDashboard() {
       status: 'pending',
       category_queue_number: nextNum,
       cycle_count: 0,
-      cycle_round: cycleCount, // This item is being sent for round cycleCount
+      cycle_round: cycleCount,
     }])
 
     await fetchData()
@@ -252,7 +273,8 @@ export default function AdminDashboard() {
     await supabase.from('queue_items').update({ status: pendingStatus.status, updated_at: new Date().toISOString() }).eq('id', pendingStatus.id)
     // If withCycle, also create new queue item
     if (pendingStatus.withCycle && pendingStatus.reg) {
-      await cycleQueue(pendingStatus.reg)
+      const round = parseInt(pendingStatus.cycleRound || '2') || 2
+      await cycleQueue(pendingStatus.reg, round)
     } else {
       await fetchData()
     }
@@ -277,6 +299,38 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
 
+      {/* Unlock modal for sent/cancelled */}
+      {unlockId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm border" style={{ borderColor: '#E9D5FF' }}>
+            <h3 className="font-bold text-base mb-1" style={{ fontFamily: 'Georgia, serif', color: 'var(--bonnie-dark)' }}>
+              ยืนยันตัวตนก่อนแก้ไข
+            </h3>
+            <p className="text-xs mb-4" style={{ color: 'var(--bonnie-muted)' }}>ใส่รหัสผ่าน Admin เพื่อแก้ไขสถานะนี้</p>
+            <input type="password" value={unlockPassword}
+              onChange={e => { setUnlockPassword(e.target.value); setUnlockError('') }}
+              placeholder="รหัสผ่าน" autoFocus
+              onKeyDown={e => e.key === 'Enter' && unlockAndEdit()}
+              className="w-full px-4 py-3 rounded-xl border text-sm bg-white mb-3"
+              style={{ borderColor: '#E9D5FF', color: 'var(--bonnie-dark)' }} />
+            {unlockError && <p className="text-xs text-red-600 mb-3">{unlockError}</p>}
+            <div className="flex gap-2">
+              <button onClick={() => { setUnlockId(null); setUnlockPassword(''); setUnlockError('') }}
+                className="flex-1 py-2.5 rounded-xl text-sm border"
+                style={{ borderColor: '#E9D5FF', color: 'var(--bonnie-muted)', backgroundColor: 'white' }}>
+                ยกเลิก
+              </button>
+              <button onClick={unlockAndEdit} disabled={unlocking || !unlockPassword}
+                className="flex-1 py-2.5 rounded-xl text-sm text-white font-medium disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, var(--bonnie-lavender), var(--bonnie-rose))' }}>
+                {unlocking ? 'กำลังตรวจสอบ...' : '🔓 ยืนยัน'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Confirm status change modal */}
       {pendingStatus && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
@@ -293,15 +347,26 @@ export default function AdminDashboard() {
             {/* Show cycle option only when status is sent */}
             {pendingStatus.status === 'sent' && (
               <div className="mb-4 p-3 rounded-xl border" style={{ borderColor: '#6ee7b7', backgroundColor: '#f0fdf4' }}>
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center gap-2 cursor-pointer mb-2">
                   <input type="checkbox"
                     checked={pendingStatus.withCycle || false}
                     onChange={e => setPendingStatus(prev => prev ? { ...prev, withCycle: e.target.checked } : null)}
                     className="w-4 h-4 accent-green-500" />
-                  <span className="text-xs font-medium" style={{ color: '#059669' }}>
-                    🔄 วนคิวส่งใหม่รอบที่ {((pendingStatus.reg as any)?.cycle_count || 0) + 2}
-                  </span>
+                  <span className="text-xs font-medium" style={{ color: '#059669' }}>🔄 วนคิวส่งใหม่</span>
                 </label>
+                {pendingStatus.withCycle && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs" style={{ color: '#059669' }}>รอบที่</span>
+                    <input
+                      type="number" min="2"
+                      value={pendingStatus.cycleRound || ''}
+                      onChange={e => setPendingStatus(prev => prev ? { ...prev, cycleRound: e.target.value } : null)}
+                      placeholder="2"
+                      className="w-16 px-2 py-1 rounded-lg border text-sm text-center"
+                      style={{ borderColor: '#6ee7b7', color: 'var(--bonnie-dark)' }}
+                    />
+                  </div>
+                )}
               </div>
             )}
             <div className="flex gap-2">
@@ -498,17 +563,32 @@ export default function AdminDashboard() {
                         </div>
                       ))}
                     </div>
-                    <div className="text-xs font-medium mb-2" style={{ color: 'var(--bonnie-muted)' }}>เปลี่ยนสถานะ</div>
-                    <div className="flex flex-wrap gap-2">
-                      {STATUSES.map(s => (
-                        <button key={s.value} onClick={() => updateStatus(reg.id, s.value)}
-                          disabled={updating === reg.id || reg.status === s.value}
-                          className="px-3 py-1.5 rounded-xl text-xs font-medium border-2 transition-all disabled:opacity-50"
-                          style={{ borderColor: reg.status === s.value ? s.color : 'transparent', backgroundColor: reg.status === s.value ? s.color + '20' : '#f9fafb', color: s.color }}>
-                          {s.label}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-xs font-medium" style={{ color: 'var(--bonnie-muted)' }}>เปลี่ยนสถานะ</div>
+                      {['sent','cancelled'].includes(reg.status) && (
+                        <button onClick={() => { setUnlockId(reg.id); setUnlockPassword(''); setUnlockError('') }}
+                          className="text-xs px-3 py-1 rounded-full border font-medium"
+                          style={{ borderColor: '#E9D5FF', color: 'var(--bonnie-rose)', backgroundColor: 'white' }}>
+                          🔓 แก้ไข
                         </button>
-                      ))}
+                      )}
                     </div>
+                    {['sent','cancelled'].includes(reg.status) ? (
+                      <p className="text-xs py-2" style={{ color: 'var(--bonnie-muted)' }}>
+                        กด "แก้ไข" เพื่อเปลี่ยนสถานะนี้
+                      </p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {STATUSES.map(s => (
+                          <button key={s.value} onClick={() => updateStatus(reg.id, s.value)}
+                            disabled={updating === reg.id || reg.status === s.value}
+                            className="px-3 py-1.5 rounded-xl text-xs font-medium border-2 transition-all disabled:opacity-50"
+                            style={{ borderColor: reg.status === s.value ? s.color : 'transparent', backgroundColor: reg.status === s.value ? s.color + '20' : '#f9fafb', color: s.color }}>
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <div className="mt-3 pt-3 border-t flex justify-end" style={{ borderColor: '#F3E8FF' }}>
                       <button onClick={() => { setDeleteId(reg.id); setDeletePassword(''); setDeleteError('') }}
                         className="text-xs px-3 py-1.5 rounded-xl border font-medium"
