@@ -226,7 +226,7 @@ export default function AdminDashboard() {
     setDeleting(false)
   }
 
-  async function cycleQueue(reg: any, round?: number) {
+  async function cycleQueue(reg: QueueItem) {
     // Mark current as cycling
     // First cycle = round 2 (already sent round 1)
     const cycleCount = (reg as any).cycle_count ? (reg as any).cycle_count + 1 : 2
@@ -531,13 +531,14 @@ export default function AdminDashboard() {
                     <div className="font-semibold text-sm" style={{ color: statusFg(reg.status) }}>{reg.name}</div>
                     <div className="text-xs truncate" style={{ color: 'var(--bonnie-muted)' }}>{reg.account}{reg.food_quantity ? ` · ${reg.food_quantity}` : ''}</div>
                     <div className="text-xs mt-0.5" style={{ color: '#b0919a' }}>
-                      {reg.status === 'pending' && (reg as any).cycle_round > 0
-                        ? `ลงทะเบียน ${new Date(reg.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })} · วนคิวส่งใหม่รอบที่ ${(reg as any).cycle_round}`
-                        : reg.status === 'cycling'
-                        ? `อัปเดต ${new Date(reg.updated_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })} · ส่งแล้ว วนคิวส่งใหม่รอบที่ ${(reg as any).cycle_count || 2}`
-                        : reg.status === 'pending'
-                        ? `ลงทะเบียน ${new Date(reg.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}`
-                        : `อัปเดต ${new Date(reg.updated_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}`}
+                      {(() => {
+                    const thTime = new Date(reg.status === 'pending' ? reg.created_at : reg.updated_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
+                    const cycleRound = (reg as any).cycle_round || 0
+                    const cycleCount = (reg as any).cycle_count || 0
+                    if (reg.status === 'pending' && cycleRound > 0) return `${thTime} · วนคิวส่งใหม่รอบที่ ${cycleRound}`
+                    if (reg.status === 'cycling') return `${thTime} · ส่งแล้ว วนคิวส่งใหม่รอบที่ ${cycleCount}`
+                    return thTime
+                  })()}
                     </div>
                   </div>
                   <span className="text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0"
