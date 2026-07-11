@@ -28,7 +28,7 @@ const TIMEOUT_MS = 10 * 60 * 1000 // 10 minutes
 function sortQueue(items: QueueItem[]): QueueItem[] {
   const contacting = items.filter(i => i.status === 'contacting').sort((a,b) => a.category_queue_number - b.category_queue_number)
   const pending = items.filter(i => i.status === 'pending').sort((a,b) => a.category_queue_number - b.category_queue_number)
-  const cycling = items.filter(i => i.status === 'cycling').sort((a,b) => a.category_queue_number - b.category_queue_number)
+  const cycling = items.filter(i => i.status === 'cycling').sort((a,b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime())
   const sent = items.filter(i => i.status === 'sent').sort((a,b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
   const cancelled = items.filter(i => i.status === 'cancelled').sort((a,b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
   return [...contacting, ...pending, ...cycling, ...sent, ...cancelled]
