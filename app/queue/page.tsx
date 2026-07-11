@@ -145,7 +145,6 @@ export default function QueuePage() {
                 {censor(reg.account)}
               </div>
               <div className="text-xs mt-0.5 flex flex-wrap gap-x-2" style={{ color: 'var(--bonnie-muted)' }}>
-                {reg.food_quantity && <span>{reg.food_quantity}</span>}
                 <span>
                   {new Date(reg.status === 'pending' ? reg.created_at : reg.updated_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
                   {(reg as any).cycle_round > 0 && ` · ${lang === 'en' ? `Round ${(reg as any).cycle_round}` : `วนคิวส่งใหม่รอบที่ ${(reg as any).cycle_round}`}`}

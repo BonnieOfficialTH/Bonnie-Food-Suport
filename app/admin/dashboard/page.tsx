@@ -111,7 +111,7 @@ export default function AdminDashboard() {
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteError, setDeleteError] = useState('')
   const [deleting, setDeleting] = useState(false)
-  const [pendingStatus, setPendingStatus] = useState<{id: string; status: RegistrationStatus; reg?: any; withCycle?: boolean; cycleRound?: string} | null>(null)
+  const [pendingStatus, setPendingStatus] = useState<{id: string; status: RegistrationStatus; reg?: any; withCycle?: boolean; cycleRound?: string; eventName?: string; deliveryDate?: string; deliveryRound?: string} | null>(null)
   const [unlockId, setUnlockId] = useState<string | null>(null)
   const [unlockPassword, setUnlockPassword] = useState('')
   const [unlockError, setUnlockError] = useState('')
@@ -255,7 +255,11 @@ export default function AdminDashboard() {
     if (!pendingStatus) return
     setUpdating(pendingStatus.id)
     // Save the status first
-    await supabase.from('queue_items').update({ status: pendingStatus.status, updated_at: new Date().toISOString() }).eq('id', pendingStatus.id)
+    const extraData: any = { status: pendingStatus.status, updated_at: new Date().toISOString() }
+    if (pendingStatus.eventName) extraData.event_name = pendingStatus.eventName
+    if (pendingStatus.deliveryDate) extraData.delivery_date = pendingStatus.deliveryDate
+    if (pendingStatus.deliveryRound) extraData.delivery_round = pendingStatus.deliveryRound
+    await supabase.from('queue_items').update(extraData).eq('id', pendingStatus.id)
     // If withCycle, also create new queue item
     if (pendingStatus.withCycle && pendingStatus.reg) {
       const round = parseInt(pendingStatus.cycleRound || '2') || 2
@@ -354,6 +358,36 @@ export default function AdminDashboard() {
                 )}
               </div>
             )}
+            {/* Event details fields */}
+            <div className="space-y-2 mb-4">
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--bonnie-muted)' }}>ชื่องาน</label>
+                <input type="text"
+                  value={pendingStatus.eventName || ''}
+                  onChange={e => setPendingStatus(prev => prev ? {...prev, eventName: e.target.value} : null)}
+                  placeholder="เช่น งานเปิดตัวอัลบั้ม"
+                  className="w-full px-3 py-2 rounded-xl border text-sm bg-white"
+                  style={{ borderColor: '#E9D5FF', color: 'var(--bonnie-dark)' }} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--bonnie-muted)' }}>วันที่จัดส่ง</label>
+                <input type="date"
+                  value={pendingStatus.deliveryDate || ''}
+                  onChange={e => setPendingStatus(prev => prev ? {...prev, deliveryDate: e.target.value} : null)}
+                  className="w-full px-3 py-2 rounded-xl border text-sm bg-white"
+                  style={{ borderColor: '#E9D5FF', color: 'var(--bonnie-dark)' }} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--bonnie-muted)' }}>รอบในการจัดส่ง</label>
+                <input type="text"
+                  value={pendingStatus.deliveryRound || ''}
+                  onChange={e => setPendingStatus(prev => prev ? {...prev, deliveryRound: e.target.value} : null)}
+                  placeholder="เช่น รอบเช้า / รอบบ่าย"
+                  className="w-full px-3 py-2 rounded-xl border text-sm bg-white"
+                  style={{ borderColor: '#E9D5FF', color: 'var(--bonnie-dark)' }} />
+              </div>
+            </div>
+
             <div className="flex gap-2">
               <button onClick={() => setPendingStatus(null)}
                 className="flex-1 py-2.5 rounded-xl text-sm border"
@@ -542,6 +576,9 @@ export default function AdminDashboard() {
                         reg.food_quantity ? { label: 'จำนวน', value: reg.food_quantity } : null,
                         { label: 'สะดวกติดต่อกลับ', value: reg.convenience_choice === 'convenient' ? '✓ สะดวก' : '✗ ไม่สะดวก' },
                         { label: 'ลงทะเบียนเมื่อ', value: new Date(reg.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) },
+                      (reg as any).event_name ? { label: 'ชื่องาน', value: (reg as any).event_name } : null,
+                      (reg as any).delivery_date ? { label: 'วันที่จัดส่ง', value: new Date((reg as any).delivery_date).toLocaleDateString('th-TH', { dateStyle: 'short' }) } : null,
+                      (reg as any).delivery_round ? { label: 'รอบจัดส่ง', value: (reg as any).delivery_round } : null,
                       ].filter(Boolean).map((item: any) => (
                         <div key={item.label} className="p-2.5 rounded-xl" style={{ backgroundColor: 'var(--bonnie-cream)' }}>
                           <div className="font-medium mb-0.5" style={{ color: 'var(--bonnie-muted)' }}>{item.label}</div>
