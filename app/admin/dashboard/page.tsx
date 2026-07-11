@@ -27,11 +27,12 @@ const TIMEOUT_MS = 10 * 60 * 1000 // 10 minutes
 
 function sortQueue(items: QueueItem[]): QueueItem[] {
   const contacting = items.filter(i => i.status === 'contacting').sort((a,b) => a.category_queue_number - b.category_queue_number)
-  const pending = items.filter(i => i.status === 'pending').sort((a,b) => a.category_queue_number - b.category_queue_number)
+  const pending = items.filter(i => i.status === 'pending' && !((i as any).cycle_round > 0)).sort((a,b) => a.category_queue_number - b.category_queue_number)
+  const pendingCycle = items.filter(i => i.status === 'pending' && (i as any).cycle_round > 0).sort((a,b) => a.category_queue_number - b.category_queue_number)
   const cycling = items.filter(i => i.status === 'cycling').sort((a,b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime())
   const sent = items.filter(i => i.status === 'sent').sort((a,b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
   const cancelled = items.filter(i => i.status === 'cancelled').sort((a,b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-  return [...contacting, ...pending, ...cycling, ...sent, ...cancelled]
+  return [...contacting, ...pending, ...pendingCycle, ...cycling, ...sent, ...cancelled]
 }
 
 function getDisplayNumber(item: QueueItem, sortedList: QueueItem[]): number | null {
@@ -562,7 +563,9 @@ export default function AdminDashboard() {
                   </div>
                   <span className="text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0"
                     style={{ backgroundColor: statusBg(reg.status), color: statusFg(reg.status) }}>
-                    {STATUS_LABELS[reg.status].th}
+                    {reg.status === 'pending' && (reg as any).cycle_round > 0
+                      ? 'รอดำเนินการ (วนคิว)'
+                      : STATUS_LABELS[reg.status].th}
                   </span>
                   <span className="text-xs flex-shrink-0" style={{ color: 'var(--bonnie-muted)' }}>{expandedId === reg.id ? '▲' : '▼'}</span>
                 </div>

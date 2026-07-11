@@ -25,11 +25,12 @@ function censor(str: string): string {
 
 function sortQueue(items: QueueItem[]): QueueItem[] {
   const contacting = items.filter(i => i.status === 'contacting').sort((a,b) => a.category_queue_number - b.category_queue_number)
-  const pending = items.filter(i => i.status === 'pending').sort((a,b) => a.category_queue_number - b.category_queue_number)
+  const pending = items.filter(i => i.status === 'pending' && !((i as any).cycle_round > 0)).sort((a,b) => a.category_queue_number - b.category_queue_number)
+  const pendingCycle = items.filter(i => i.status === 'pending' && (i as any).cycle_round > 0).sort((a,b) => a.category_queue_number - b.category_queue_number)
   const cycling = items.filter(i => i.status === 'cycling').sort((a,b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime())
   const sent = items.filter(i => i.status === 'sent').sort((a,b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
   const cancelled = items.filter(i => i.status === 'cancelled').sort((a,b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-  return [...contacting, ...pending, ...cycling, ...sent, ...cancelled]
+  return [...contacting, ...pending, ...pendingCycle, ...cycling, ...sent, ...cancelled]
 }
 
 function getDisplayNumber(item: QueueItem, sortedList: QueueItem[]): number | null {
@@ -96,7 +97,6 @@ export default function QueuePage() {
         {[
           { s: 'contacting', color: '#2563eb', label: { th: 'ระหว่างติดต่อ', en: 'Contacting' } },
           { s: 'pending', color: 'var(--bonnie-dark)', label: { th: 'รอดำเนินการ', en: 'Pending' } },
-          { s: 'cycling', color: '#059669', label: { th: 'วนคิวส่งใหม่', en: 'Requeued' } },
           { s: 'sent', color: '#16a34a', label: { th: 'ส่งแล้ว', en: 'Sent' } },
           { s: 'cancelled', color: '#dc2626', label: { th: 'ยกเลิก', en: 'Cancelled' } },
         ].map(x => (
@@ -154,7 +154,9 @@ export default function QueuePage() {
             </div>
             <span className="flex-shrink-0 text-xs px-2.5 py-1 rounded-full font-medium"
               style={{ backgroundColor: statusBg(reg.status), color: statusColor(reg.status) }}>
-              {STATUS_LABELS[reg.status][lang]}
+              {reg.status === 'pending' && (reg as any).cycle_round > 0
+                ? (lang === 'th' ? 'รอดำเนินการ (วนคิว)' : 'Pending (Requeued)')
+                : STATUS_LABELS[reg.status][lang]}
             </span>
           </div>
         ))}
