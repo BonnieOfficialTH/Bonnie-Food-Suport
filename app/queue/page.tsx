@@ -24,26 +24,16 @@ function censor(str: string): string {
 }
 
 function sortQueue(items: QueueItem[]): QueueItem[] {
-  // Split into groups
   const contacting = items.filter(i => i.status === 'contacting').sort((a,b) => a.category_queue_number - b.category_queue_number)
-  const unavailable = items.filter(i => i.status === 'unavailable').sort((a,b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime())
+  const pending = items.filter(i => i.status === 'pending').sort((a,b) => a.category_queue_number - b.category_queue_number)
+  const cycling = items.filter(i => i.status === 'cycling').sort((a,b) => a.category_queue_number - b.category_queue_number)
   const sent = items.filter(i => i.status === 'sent').sort((a,b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
   const cancelled = items.filter(i => i.status === 'cancelled').sort((a,b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-
-  // For pending: split into "before unavailable" and "after unavailable"
-  // based on whether they registered before or after any unavailable was marked
-  const lastUnavailableTime = unavailable.length > 0
-    ? Math.max(...unavailable.map(i => new Date(i.updated_at).getTime()))
-    : 0
-
-  const pendingBefore = items.filter(i => i.status === 'pending' && new Date(i.created_at).getTime() <= lastUnavailableTime).sort((a,b) => a.category_queue_number - b.category_queue_number)
-  const pendingAfter = items.filter(i => i.status === 'pending' && new Date(i.created_at).getTime() > lastUnavailableTime).sort((a,b) => a.category_queue_number - b.category_queue_number)
-
-  return [...contacting, ...pendingBefore, ...unavailable, ...pendingAfter, ...sent, ...cancelled]
+  return [...contacting, ...pending, ...cycling, ...sent, ...cancelled]
 }
 
 function getDisplayNumber(item: QueueItem, sortedList: QueueItem[]): number | null {
-  const activeStatuses = ['contacting', 'pending', 'unavailable']
+  const activeStatuses = ['contacting', 'pending']
   if (!activeStatuses.includes(item.status)) return null
   // cycling items have no display number
   const activeOnly = sortedList.filter(i => activeStatuses.includes(i.status))
@@ -90,7 +80,7 @@ export default function QueuePage() {
   }
 
   const categoryData = sortQueue(data.filter(r => r.food_category === activeTab))
-  const pendingCount = (cat: FoodCategory) => data.filter(r => r.food_category === cat && ['pending','contacting','unavailable'].includes(r.status)).length
+  const pendingCount = (cat: FoodCategory) => data.filter(r => r.food_category === cat && ['pending','contacting','cycling'].includes(r.status)).length
 
   return (
     <div>
@@ -106,7 +96,6 @@ export default function QueuePage() {
         {[
           { s: 'contacting', color: '#2563eb', label: { th: 'ระหว่างติดต่อ', en: 'Contacting' } },
           { s: 'pending', color: 'var(--bonnie-dark)', label: { th: 'รอดำเนินการ', en: 'Pending' } },
-          { s: 'unavailable', color: '#92400e', label: { th: 'ไม่สะดวกในรอบ', en: 'Unavailable' } },
           { s: 'cycling', color: '#059669', label: { th: 'วนคิวส่งใหม่', en: 'Requeued' } },
           { s: 'sent', color: '#16a34a', label: { th: 'ส่งแล้ว', en: 'Sent' } },
           { s: 'cancelled', color: '#dc2626', label: { th: 'ยกเลิก', en: 'Cancelled' } },
